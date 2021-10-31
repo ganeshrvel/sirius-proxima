@@ -1,0 +1,47 @@
+# WARNING:
+## DO NOT commit *settings.yaml* file
+
+settings:
+
+  #### Server connection
+  server:
+
+    #### (String) Server IP
+    ip: 127.0.0.1
+
+    #### (u32) Server port
+    port: 5050
+
+    #### (String) Domain name
+    domain: http://127.0.0.1
+
+    #### (String) Cookie secret
+    cookie_secret: XXXXXXXXXXXXXXX
+
+    #### (bool) http available
+    https: false
+
+  #### Database connection params
+  database:
+
+    #### (enum[pg])) DB type
+    db_type: pg
+
+    #### (String) DB name
+    db_name: XXXXXXX
+
+    #### (u32) DB port
+    port: 8500
+
+    #### (String) DB hostname
+    hostname: 127.0.0.1
+
+    #### (String) DB username
+    username: XXXXXXX
+
+    #### (String) DB password
+    password: XXXXXXX
+
+    #### (u32) DB pool
+    pool: 25
+
