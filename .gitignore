@@ -24,5 +24,6 @@ assets
 env.yaml
 settings.yaml
 /logs/**/*
-./scripts/env.config
 env.config
+Rocket.toml
+./Rocket.toml
