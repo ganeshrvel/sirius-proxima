@@ -1,6 +1,6 @@
 [package]
-name = "marx"
-description = "Marx Home Automation"
+name = "sirius-proxima"
+description = "IOT RaspberryPI Mothership Module"
 version = "0.1.0"
 edition = "2018"
 authors = ["Ganesh Rathinavel <ganeshrvel@outlook.com>"]

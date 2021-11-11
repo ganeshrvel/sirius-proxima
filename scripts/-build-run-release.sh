@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# cd to the root directory of marx
+# cd to the root directory of proxima
 SCRIPT=$(readlink -f "$0")
 SCRIPTPATH=$(dirname "$SCRIPT")
-cd $SCRIPTPATH
+cd "$SCRIPTPATH" || exit
 cd ../
 
 
 ./scripts/-resets.sh
 
 /home/pi/.cargo/bin/cargo build --release
-ROCKET_PROFILE=release ./target/release/marx
+ROCKET_PROFILE=release ./target/release/proxima

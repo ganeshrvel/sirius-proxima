@@ -10,5 +10,5 @@ pub struct Strings<'a> {
 }
 
 impl Strings<'static> {
-    pub const APP_NAME: &'static str = "Marx";
+    pub const APP_NAME: &'static str = "Sirius Proxima";
 }

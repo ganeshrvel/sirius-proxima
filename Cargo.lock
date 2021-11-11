@@ -548,24 +548,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "marx"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "chrono",
- "fern",
- "lazy_static",
- "log",
- "rocket",
- "rust_gpiozero",
- "serde",
- "serde_json",
- "serde_yaml",
- "thiserror",
- "tokio",
-]
-
-[[package]]
 name = "matchers"
 version = "0.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1103,6 +1085,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e51e73328dc4ac0c7ccbda3a494dfa03df1de2f46018127f60c693f2648455b0"
 dependencies = [
  "libc",
+]
+
+[[package]]
+name = "sirius-proxima"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "fern",
+ "lazy_static",
+ "log",
+ "rocket",
+ "rust_gpiozero",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "thiserror",
+ "tokio",
 ]
 
 [[package]]
