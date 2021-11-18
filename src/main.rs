@@ -10,14 +10,11 @@ mod utils;
 use std::env;
 use std::ops::Deref;
 
+use actix_web::{middleware as actix_middleware, web, App, HttpServer};
 use api::helpers::responses::not_found;
-use actix_web::{
-    middleware as actix_middleware, route, web, web::JsonConfig, App, HttpRequest, HttpResponse,
-    HttpResponseBuilder, HttpServer,
-};
 
 use crate::common::errors::setup_errors::SetupError;
-use crate::common::models::api::ErrorResponse;
+use crate::common::models::api::NotFoundResponse;
 use crate::common::models::data::AppData;
 use crate::constants::app_env::AppEnv;
 use crate::constants::strings::Strings;

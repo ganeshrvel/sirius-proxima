@@ -1,9 +1,12 @@
+use crate::api::helpers::responses::success_resp;
 use crate::common::models::api::Health;
-use actix_web::{get, web, HttpRequest, HttpResponse, Responder};
+use actix_web::{get, web, HttpRequest, Responder};
 
 #[get("/health")]
 pub async fn health(_: HttpRequest) -> impl Responder {
-    HttpResponse::Ok().json(Health { success: true })
+    let res = Health { is_health_ok: true };
+
+    success_resp(res)
 }
 
 pub fn services(cfg: &mut web::ServiceConfig) {

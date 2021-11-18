@@ -1,4 +1,4 @@
-use crate::api::helpers::responses::success;
+use crate::api::helpers::responses::success_resp;
 use actix_web::{get, web, HttpResponse};
 use serde::{Deserialize, Serialize};
 
@@ -13,9 +13,7 @@ pub async fn ping() -> HttpResponse {
         turn_buzzer_on: false,
     };
 
-    let de = serde_value::to_value(res).unwrap();
-
-    success(de)
+    success_resp(res)
 }
 
 pub fn services(cfg: &mut web::ServiceConfig) {
