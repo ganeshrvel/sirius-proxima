@@ -1,8 +1,8 @@
 use crate::api::routes::api_root::unprotected;
+use crate::api::routes::api_v1::sirius_alpha::sirius_alpha_scope;
 use crate::common::models::settings::Server;
 use actix_web::web::ServiceConfig;
 use actix_web::{guard, web, Scope};
-use crate::api::routes::api_v1::sirius_alpha;
 
 pub mod api_root;
 pub mod api_v1;
@@ -19,19 +19,11 @@ pub fn api_v1_scope(server: &Server) -> Scope {
                 None => false,
             }
         }))
-        .configure(api_v1_services)
-}
-
-pub fn api_v1_services(cfg: &mut ServiceConfig) {
-    sirius_alpha::services(cfg)
+        .service(sirius_alpha_scope(server))
 }
 
 /// api root scope
 /// path: {/api}'/'
-pub fn api_root_scope(_: &Server) -> Scope {
-    web::scope("").configure(api_root_services)
-}
-
 pub fn api_root_services(cfg: &mut ServiceConfig) {
-    unprotected::services(cfg);
+    unprotected::route::services(cfg);
 }

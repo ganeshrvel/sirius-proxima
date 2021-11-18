@@ -10,7 +10,7 @@ mod utils;
 use std::env;
 use std::ops::Deref;
 
-use crate::api::routes::api_root::default::not_found;
+use api::helpers::responses::not_found;
 use actix_web::{
     middleware as actix_middleware, route, web, web::JsonConfig, App, HttpRequest, HttpResponse,
     HttpResponseBuilder, HttpServer,

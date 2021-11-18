@@ -2,7 +2,7 @@ use crate::common::models::api::Health;
 use actix_web::{get, web, HttpRequest, HttpResponse, Responder};
 
 #[get("/health")]
-pub async fn health(req: HttpRequest) -> impl Responder {
+pub async fn health(_: HttpRequest) -> impl Responder {
     HttpResponse::Ok().json(Health { success: true })
 }
 
