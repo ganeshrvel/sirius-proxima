@@ -1,2 +1,2 @@
 pub mod errors;
-pub(crate) mod models;
+pub mod models;

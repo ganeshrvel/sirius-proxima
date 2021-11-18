@@ -1,1 +1,1 @@
-pub(crate) mod fern_log;
+pub mod fern_log;

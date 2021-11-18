@@ -5,12 +5,12 @@ use crate::common::models::settings::Settings;
 use crate::constants::file_paths::FilePaths;
 
 #[derive(Debug, Clone)]
-pub(crate) struct AppConfig {
-    pub app_settings: Settings,
+pub struct AppConfig<'a> {
+    pub app_settings: Settings<'a>,
 }
 
-impl<'a> AppConfig {
-    fn settings_file() -> anyhow::Result<Settings> {
+impl<'a> AppConfig<'a> {
+    fn settings_file() -> anyhow::Result<Settings<'a>> {
         let file_path = FilePaths::SETTINGS;
         log::debug!("reading the setting file... {}", file_path);
 

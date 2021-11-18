@@ -6,8 +6,7 @@ SCRIPTPATH=$(dirname "$SCRIPT")
 cd "$SCRIPTPATH" || exit
 cd ../
 
-
 ./scripts/-resets.sh
 
 /home/pi/.cargo/bin/cargo build --release
-ROCKET_PROFILE=release ./target/release/proxima
+./target/release/proxima

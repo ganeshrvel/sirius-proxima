@@ -1,47 +1,41 @@
-#![warn(clippy::all)]
-#![warn(
-    clippy::print_literal,
-    clippy::print_with_newline,
-    clippy::println_empty_string
-)]
-
 #[macro_use]
 mod macros;
 
-#[macro_use]
-extern crate rocket;
-
-use crate::common::errors::setup_errors::SetupError;
-use crate::common::models::data::AppData;
-use crate::utils::logs::fern_log::setup_logging;
-use rocket::fairing::AdHoc;
-use rocket::{Build, Rocket};
-// use rust_gpiozero::LED;
-
-use rocket::figment::providers::{Env, Format, Serialized, Toml};
-use rocket::figment::{Figment, Profile};
-use rocket::serde::Deserialize;
-use rocket::{Config, State};
-
+mod api;
 mod common;
 mod constants;
 mod helpers;
 mod utils;
 
-#[derive(Debug, Deserialize)]
-#[serde(crate = "rocket::serde")]
-struct AppConfig {
-    key: String,
-    port: u16,
-}
+use std::env;
+use std::ops::Deref;
 
-#[rocket::main]
+use crate::api::routes::api_root::default::not_found;
+use actix_web::http::StatusCode;
+use actix_web::{
+    guard, middleware as actix_middleware, route, web, web::JsonConfig, App, HttpRequest,
+    HttpResponse, HttpResponseBuilder, HttpServer,
+};
+
+use crate::common::errors::setup_errors::SetupError;
+use crate::common::models::api::ErrorResponse;
+use crate::common::models::data::AppData;
+use crate::constants::app_env::AppEnv;
+use crate::constants::strings::Strings;
+use crate::helpers::actix::actix::{get_identity_service, get_json_err};
+use crate::utils::logs::fern_log::setup_logging;
+
+#[actix_web::main]
 async fn main() -> anyhow::Result<()> {
+    println!("initializing the logger...");
     let s = setup_logging();
 
     if let Err(e) = s {
-        paniq!("[P00001] failed to initialize the logger: {:?}", e);
+        return Err(SetupError::LoggerError(e, "P00001").into());
     }
+
+    log::debug!("-----------------");
+    log::debug!("Launching {}...", Strings::APP_NAME);
 
     if let Err(e) = run().await {
         log::error!("{:?}", e);
@@ -53,17 +47,46 @@ async fn main() -> anyhow::Result<()> {
 }
 
 async fn run() -> anyhow::Result<()> {
-    let figment = Figment::from(rocket::Config::default());
+    if AppEnv::IS_DEBUG {
+        env::set_var("RUST_LOG", "actix_web=debug,actix_server=info");
+    }
 
-    let r = rocket::custom(figment)
-        .mount("/", routes![index])
-        .launch()
-        .await?;
+    let data = AppData::new().await?;
+    let data = actix_web::web::Data::new(data);
 
-    Ok(r)
-}
+    log::info!(
+        "starting the server on: {}",
+        data.config.app_settings.settings.server.get_uri(true)
+    );
 
-#[get("/")]
-fn index() -> &'static str {
-    "Hello, world!"
+    let data_cloned = data.clone();
+
+    let h = HttpServer::new(move || {
+        let dc = data_cloned.clone();
+
+        App::new()
+            .wrap(actix_middleware::Logger::default())
+            .wrap(
+                actix_middleware::DefaultHeaders::new()
+                    .header("Permissions-Policy", "interest-cohort=()"),
+            )
+            .wrap(get_identity_service(
+                dc.config.app_settings.settings.server.cookie_secret.deref(),
+                dc.config.app_settings.settings.server.domain.deref(),
+                dc.config.app_settings.settings.server.cookie_max_age_secs,
+            ))
+            .wrap(actix_middleware::Compress::default())
+            .wrap(actix_middleware::NormalizePath::new(
+                actix_middleware::TrailingSlash::Trim,
+            ))
+            .service(api::api_scope(&dc.config.app_settings.settings.server))
+            .app_data(dc)
+            .app_data(get_json_err())
+            .default_service(web::to(not_found))
+    })
+    .bind(data.config.app_settings.settings.server.get_uri(false))?
+    .run()
+    .await?;
+
+    Ok(h)
 }

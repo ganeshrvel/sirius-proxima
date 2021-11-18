@@ -1,4 +1,4 @@
-use crate::constants::qenv::Qenv;
+use crate::constants::app_env::AppEnv;
 use std::marker::PhantomData;
 
 #[non_exhaustive]
@@ -12,7 +12,7 @@ pub struct FilePaths<'a> {
 
 impl FilePaths<'static> {
     pub const SETTINGS: &'static str = "./settings.yaml";
-    pub const LOG: &'static str = if Qenv::IS_RELEASE {
+    pub const LOG: &'static str = if AppEnv::IS_RELEASE {
         "./logs/logging-release.log"
     } else {
         "./logs/logging-debug.log"
