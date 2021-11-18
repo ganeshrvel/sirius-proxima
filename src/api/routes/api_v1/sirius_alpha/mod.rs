@@ -4,6 +4,7 @@ use actix_web::web::ServiceConfig;
 use actix_web::{web, Scope};
 
 pub mod route;
+pub mod controller;
 
 /// api sirius_alpha scope
 /// path: {/api/v1}'/sirius_alpha'

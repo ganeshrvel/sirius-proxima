@@ -58,7 +58,7 @@ async fn run() -> anyhow::Result<()> {
     let data_cloned = data.clone();
 
     let h = HttpServer::new(move || {
-        let dc = data_cloned.clone();
+        let data_cloned_spawn = data_cloned.clone();
 
         App::new()
             .wrap(actix_middleware::Logger::default())
@@ -67,16 +67,16 @@ async fn run() -> anyhow::Result<()> {
                     .header("Permissions-Policy", "interest-cohort=()"),
             )
             .wrap(get_identity_service(
-                dc.config.app_settings.settings.server.cookie_secret.deref(),
-                dc.config.app_settings.settings.server.domain.deref(),
-                dc.config.app_settings.settings.server.cookie_max_age_secs,
+                data_cloned_spawn.config.app_settings.settings.server.cookie_secret.deref(),
+                data_cloned_spawn.config.app_settings.settings.server.domain.deref(),
+                data_cloned_spawn.config.app_settings.settings.server.cookie_max_age_secs,
             ))
             .wrap(actix_middleware::Compress::default())
             .wrap(actix_middleware::NormalizePath::new(
                 actix_middleware::TrailingSlash::Trim,
             ))
-            .service(api::api_scope(&dc.config.app_settings.settings.server))
-            .app_data(dc)
+            .service(api::api_scope(&data_cloned_spawn.config.app_settings.settings.server))
+            .app_data(data_cloned_spawn)
             .app_data(get_json_err())
             .default_service(web::to(not_found))
     })

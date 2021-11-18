@@ -1,19 +1,10 @@
-use crate::api::helpers::responses::success_resp;
-use actix_web::{get, web, HttpResponse};
-use serde::{Deserialize, Serialize};
+use crate::api::routes::api_v1::sirius_alpha::controller::{salpha_ping, SAlphaPingRequest};
+use actix_web::web::Json;
+use actix_web::{put, web, HttpResponse};
 
-#[derive(Debug, Deserialize, Serialize)]
-pub struct SAlphaPingResponse {
-    turn_buzzer_on: bool,
-}
-
-#[get("/ping")]
-pub async fn ping() -> HttpResponse {
-    let res = SAlphaPingResponse {
-        turn_buzzer_on: false,
-    };
-
-    success_resp(res)
+#[put("/ping")]
+pub async fn ping(req: Json<SAlphaPingRequest>) -> HttpResponse {
+    salpha_ping(req)
 }
 
 pub fn services(cfg: &mut web::ServiceConfig) {
