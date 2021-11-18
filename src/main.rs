@@ -11,10 +11,9 @@ use std::env;
 use std::ops::Deref;
 
 use crate::api::routes::api_root::default::not_found;
-use actix_web::http::StatusCode;
 use actix_web::{
-    guard, middleware as actix_middleware, route, web, web::JsonConfig, App, HttpRequest,
-    HttpResponse, HttpResponseBuilder, HttpServer,
+    middleware as actix_middleware, route, web, web::JsonConfig, App, HttpRequest, HttpResponse,
+    HttpResponseBuilder, HttpServer,
 };
 
 use crate::common::errors::setup_errors::SetupError;

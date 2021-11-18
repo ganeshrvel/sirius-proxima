@@ -1,12 +1,12 @@
 use crate::helpers::parsers::setting_files::AppConfig;
 use std::sync::Arc;
 
-pub struct AppData<'a> {
-    pub config: AppConfig<'a>,
+pub struct AppData {
+    pub config: AppConfig,
 }
 
-impl<'a> AppData<'a> {
-    pub async fn new() -> anyhow::Result<Arc<AppData<'a>>> {
+impl AppData {
+    pub async fn new() -> anyhow::Result<Arc<AppData>> {
         let c = AppConfig::new()?;
 
         Ok(Arc::new(Self { config: c }))

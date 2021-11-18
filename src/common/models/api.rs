@@ -10,3 +10,10 @@ pub struct ErrorResponse<'a> {
     pub status_code: u16,
     pub message: Option<&'a str>,
 }
+
+#[derive(Debug, Serialize)]
+pub struct SuccessResponse<'a> {
+    pub status_code: u16,
+    pub message: Option<&'a str>,
+    pub data: serde_value::Value,
+}
