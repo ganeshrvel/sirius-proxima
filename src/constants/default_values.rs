@@ -8,4 +8,6 @@ pub struct DefaultValues<'a> {
     _marker: PhantomData<&'a ()>,
 }
 
-impl DefaultValues<'static> {}
+impl DefaultValues<'static> {
+    pub const MAX_ACTIVITIES_VECTOR_LENGTH_PER_DEVICE: usize = 1000;
+}

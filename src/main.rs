@@ -10,18 +10,18 @@ mod utils;
 use std::env;
 use std::ops::Deref;
 
-use actix_web::{middleware as actix_middleware, web, App, HttpServer, Responder};
+use actix_web::{middleware as actix_middleware, web, App, HttpServer};
 use api::helpers::responses::not_found;
 use std::sync::Mutex;
 
 use crate::common::errors::setup_errors::SetupError;
 use crate::common::models::api::NotFoundResponse;
 use crate::common::models::data::AppData;
+use crate::common::states::app_state::AppState;
 use crate::constants::app_env::AppEnv;
 use crate::constants::strings::Strings;
 use crate::helpers::actix::actix::{get_identity_service, get_json_err};
 use crate::utils::logs::fern_log::setup_logging;
-use serde::{Deserialize, Serialize};
 
 #[actix_web::main]
 async fn main() -> anyhow::Result<()> {
@@ -58,7 +58,9 @@ async fn run() -> anyhow::Result<()> {
     );
 
     let system_data_cloned = data.clone();
-    let shared_state = web::Data::new(Mutex::new(AppState { counter: 0 }));
+
+    let app_state = AppState::new();
+    let shared_state = web::Data::new(Mutex::new(app_state));
 
     let h = HttpServer::new(move || {
         let system_data_cloned_spawn = system_data_cloned.clone();
@@ -108,10 +110,4 @@ async fn run() -> anyhow::Result<()> {
     .await?;
 
     Ok(h)
-}
-
-// todo remove this
-#[derive(Debug, Deserialize, Clone)]
-pub struct AppState {
-    pub counter: usize,
 }
