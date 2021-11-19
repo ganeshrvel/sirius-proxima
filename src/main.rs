@@ -10,8 +10,10 @@ mod utils;
 use std::env;
 use std::ops::Deref;
 
-use actix_web::{middleware as actix_middleware, web, App, HttpServer};
+use crate::api::routes::api_v1::sirius_alpha::controller::AppState;
+use actix_web::{middleware as actix_middleware, web, App, HttpServer, Responder};
 use api::helpers::responses::not_found;
+use std::sync::Mutex;
 
 use crate::common::errors::setup_errors::SetupError;
 use crate::common::models::api::NotFoundResponse;
@@ -55,10 +57,11 @@ async fn run() -> anyhow::Result<()> {
         data.config.app_settings.settings.server.get_uri(true)
     );
 
-    let data_cloned = data.clone();
+    let system_data_cloned = data.clone();
+    let shared_state = web::Data::new(Mutex::new(AppState { counter: 0 }));
 
     let h = HttpServer::new(move || {
-        let data_cloned_spawn = data_cloned.clone();
+        let system_data_cloned_spawn = system_data_cloned.clone();
 
         App::new()
             .wrap(actix_middleware::Logger::default())
@@ -67,17 +70,37 @@ async fn run() -> anyhow::Result<()> {
                     .header("Permissions-Policy", "interest-cohort=()"),
             )
             .wrap(get_identity_service(
-                data_cloned_spawn.config.app_settings.settings.server.cookie_secret.deref(),
-                data_cloned_spawn.config.app_settings.settings.server.domain.deref(),
-                data_cloned_spawn.config.app_settings.settings.server.cookie_max_age_secs,
+                system_data_cloned_spawn
+                    .config
+                    .app_settings
+                    .settings
+                    .server
+                    .cookie_secret
+                    .deref(),
+                system_data_cloned_spawn
+                    .config
+                    .app_settings
+                    .settings
+                    .server
+                    .domain
+                    .deref(),
+                system_data_cloned_spawn
+                    .config
+                    .app_settings
+                    .settings
+                    .server
+                    .cookie_max_age_secs,
             ))
             .wrap(actix_middleware::Compress::default())
             .wrap(actix_middleware::NormalizePath::new(
                 actix_middleware::TrailingSlash::Trim,
             ))
-            .service(api::api_scope(&data_cloned_spawn.config.app_settings.settings.server))
-            .app_data(data_cloned_spawn)
+            .service(api::api_scope(
+                &system_data_cloned_spawn.config.app_settings.settings.server,
+            ))
+            .app_data(system_data_cloned_spawn)
             .app_data(get_json_err())
+            .app_data(shared_state.clone())
             .default_service(web::to(not_found))
     })
     .bind(data.config.app_settings.settings.server.get_uri(false))?
