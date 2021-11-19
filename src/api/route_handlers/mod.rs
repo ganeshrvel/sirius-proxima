@@ -1,5 +1,5 @@
-use crate::api::routes::api_root::unprotected;
-use crate::api::routes::api_v1::sirius_alpha::sirius_alpha_scope;
+use crate::api::route_handlers::api_root::unprotected;
+use crate::api::route_handlers::api_v1::sirius_alpha::sirius_alpha_scope;
 use crate::common::models::settings::Server;
 use actix_web::web::ServiceConfig;
 use actix_web::{guard, web, Scope};
@@ -25,5 +25,5 @@ pub fn api_v1_scope(server: &Server) -> Scope {
 /// api root scope
 /// path: {/api}'/'
 pub fn api_root_services(cfg: &mut ServiceConfig) {
-    unprotected::route::services(cfg);
+    unprotected::health::services(cfg);
 }

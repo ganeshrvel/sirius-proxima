@@ -10,7 +10,6 @@ mod utils;
 use std::env;
 use std::ops::Deref;
 
-use crate::api::routes::api_v1::sirius_alpha::controller::AppState;
 use actix_web::{middleware as actix_middleware, web, App, HttpServer, Responder};
 use api::helpers::responses::not_found;
 use std::sync::Mutex;
@@ -22,6 +21,7 @@ use crate::constants::app_env::AppEnv;
 use crate::constants::strings::Strings;
 use crate::helpers::actix::actix::{get_identity_service, get_json_err};
 use crate::utils::logs::fern_log::setup_logging;
+use serde::{Deserialize, Serialize};
 
 #[actix_web::main]
 async fn main() -> anyhow::Result<()> {
@@ -108,4 +108,10 @@ async fn run() -> anyhow::Result<()> {
     .await?;
 
     Ok(h)
+}
+
+// todo remove this
+#[derive(Debug, Deserialize, Clone)]
+pub struct AppState {
+    pub counter: usize,
 }

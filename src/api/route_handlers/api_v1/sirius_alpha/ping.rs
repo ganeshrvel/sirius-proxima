@@ -1,7 +1,10 @@
 use crate::api::helpers::responses::success_resp;
+use crate::AppState;
 use actix_web::web::Json;
-use actix_web::{web, HttpResponse};
+use actix_web::{put, web, HttpResponse};
 use serde::{Deserialize, Serialize};
+
+use actix_web::http::Error;
 use std::sync::Mutex;
 
 #[derive(Debug, Deserialize)]
@@ -38,12 +41,11 @@ pub struct SAlphaPingResponse {
     pub continuous_period_buzzer_beep_duration_sec: bool,
 }
 
-#[derive(Debug, Deserialize, Clone)]
-pub struct AppState {
-    pub counter: usize,
-}
-
-pub fn salpha_ping(data: web::Data<Mutex<AppState>>, req: Json<SAlphaPingRequest>) -> HttpResponse {
+#[put("/ping")]
+pub async fn salpha_ping(
+    data: web::Data<Mutex<AppState>>,
+    req: Json<SAlphaPingRequest>,
+) -> anyhow::Result<HttpResponse, Error> {
     let mut data = data.lock().unwrap();
     data.counter += 1;
     println!("{}", data.counter);
@@ -53,5 +55,5 @@ pub fn salpha_ping(data: web::Data<Mutex<AppState>>, req: Json<SAlphaPingRequest
         continuous_period_buzzer_beep_duration_sec: true,
     };
 
-    success_resp(res)
+    Ok(success_resp(res))
 }
