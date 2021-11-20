@@ -4,7 +4,7 @@ use crate::{max_of, push_to_last_and_maintain_capacity_of_vector};
 use chrono::Utc;
 use std::collections::HashMap;
 use std::num::Wrapping;
-use std::ops::Deref;
+
 
 type IotDevicesActivity = HashMap<IotDevice, Vec<IotDeviceActivityData>>;
 
@@ -61,7 +61,6 @@ impl IotDevicesState {
                     // to prevent the `out of range` error we choose `clear memory length` to splice the vector or `maximum allowed length`, which ever is the lowest of two.
 
                     // we splice out a chunk from the vector to prevent vector size management everytime we reach the maximum allowed threshold
-
                     current_activities_cloned = push_to_last_and_maintain_capacity_of_vector(
                         current_activities_cloned,
                         max_of(
