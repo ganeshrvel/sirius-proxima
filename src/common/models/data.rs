@@ -8,7 +8,7 @@ pub struct AppData {
 }
 
 impl AppData {
-    pub async fn new() -> anyhow::Result<Arc<AppData>> {
+    pub async fn new() -> anyhow::Result<Arc<Self>> {
         let c = AppConfig::new()?;
 
         Ok(Arc::new(Self { config: c }))

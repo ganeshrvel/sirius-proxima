@@ -1,10 +1,10 @@
 use crate::common::models::data::IotDevice;
 use crate::constants::default_values::DefaultValues;
-use crate::{max_of, push_to_last_and_maintain_capacity_of_vector};
+use crate::push_to_last_and_maintain_capacity_of_vector;
+use crate::utils::math::max_of;
 use chrono::Utc;
 use std::collections::HashMap;
 use std::num::Wrapping;
-
 
 type IotDevicesActivity = HashMap<IotDevice, Vec<IotDeviceActivityData>>;
 
@@ -64,10 +64,10 @@ impl IotDevicesState {
                     current_activities_cloned = push_to_last_and_maintain_capacity_of_vector(
                         current_activities_cloned,
                         max_of(
-                            Wrapping(DefaultValues::MAX_ACTIVITIES_VECTOR_LENGTH_PER_DEVICE)
-                                - Wrapping(
-                                    DefaultValues::MAX_ACTIVITIES_PER_DEVICE_CLEAR_SPLICE_SIZE,
-                                ),
+                            Wrapping(
+                                DefaultValues::MAX_ACTIVITIES_VECTOR_LENGTH_PER_DEVICE
+                                    - DefaultValues::MAX_ACTIVITIES_PER_DEVICE_CLEAR_SPLICE_SIZE,
+                            ),
                             Wrapping(0),
                         ),
                         activity_data,

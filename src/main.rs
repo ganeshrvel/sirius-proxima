@@ -1,3 +1,19 @@
+#![deny(clippy::all)]
+#![warn(
+    clippy::all,
+    clippy::restriction,
+    clippy::pedantic,
+    clippy::nursery,
+    clippy::cargo
+)]
+#![allow(clippy::missing_docs_in_private_items)]
+#![allow(clippy::future_not_send)]
+#![allow(clippy::implicit_return)]
+#![allow(clippy::similar_names)]
+#![allow(clippy::module_name_repetitions)]
+#![allow(clippy::blanket_clippy_restriction_lints)]
+#![warn(clippy::print_stdout)]
+
 #[macro_use]
 mod macros;
 
@@ -8,8 +24,6 @@ mod helpers;
 mod utils;
 
 use std::env;
-
-use std::ops::{Deref};
 
 use actix_web::{middleware as actix_middleware, web, App, HttpServer};
 use api::helpers::responses::not_found;
@@ -25,11 +39,11 @@ use crate::constants::strings::Strings;
 use crate::helpers::actix::actix::{get_identity_service, get_json_err};
 use crate::helpers::sanitizers::sanitize_constants;
 use crate::utils::logs::fern_log::setup_logging;
-use crate::utils::math::{max_of};
 use crate::utils::vectors::push_to_last_and_maintain_capacity_of_vector;
 
 #[actix_web::main]
 async fn main() -> anyhow::Result<()> {
+    #[allow(clippy::print_stdout)]
     println!("initializing the logger...");
     let setup = setup_logging();
     if let Err(_e) = &setup {
@@ -72,7 +86,7 @@ async fn run() -> anyhow::Result<()> {
     let app_state = AppState::new();
     let shared_state = web::Data::new(Mutex::new(app_state));
 
-    let h = HttpServer::new(move || {
+    HttpServer::new(move || {
         let system_data_cloned_spawn = system_data_cloned.clone();
 
         App::new()
@@ -82,20 +96,18 @@ async fn run() -> anyhow::Result<()> {
                     .header("Permissions-Policy", "interest-cohort=()"),
             )
             .wrap(get_identity_service(
-                system_data_cloned_spawn
+                &*system_data_cloned_spawn
                     .config
                     .app_settings
                     .settings
                     .server
-                    .cookie_secret
-                    .deref(),
-                system_data_cloned_spawn
+                    .cookie_secret,
+                &*system_data_cloned_spawn
                     .config
                     .app_settings
                     .settings
                     .server
-                    .domain
-                    .deref(),
+                    .domain,
                 system_data_cloned_spawn
                     .config
                     .app_settings
@@ -119,5 +131,5 @@ async fn run() -> anyhow::Result<()> {
     .run()
     .await?;
 
-    Ok(h)
+    Ok(())
 }

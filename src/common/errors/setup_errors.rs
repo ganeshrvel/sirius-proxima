@@ -16,6 +16,7 @@ pub enum SetupError<'a> {
     LoggerError(anyhow::Error, &'a str),
 
     #[error("[2:?] An error occurred while reading the {0:?} file: {1:?}")]
+    #[allow(dead_code)]
     SettingsFile(&'a str, io::Error, &'a str),
 
     #[error("[2:?] An error occurred while deserializing the {0:?} file: {1:?}")]

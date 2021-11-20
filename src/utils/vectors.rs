@@ -1,17 +1,15 @@
-use crate::max_of;
+use crate::utils::math::max_of;
 use std::fmt::Debug;
 use std::num::Wrapping;
 
 pub fn truncate_from_last<T>(vec: Vec<T>, max_size_inclusive: usize) -> Vec<T>
 where
-    T: Clone,
-    T: Debug,
+    T: Clone + Debug,
 {
-    let _vec = vec;
-    let vec_length = _vec.len();
+    let vec_length = vec.len();
 
     if vec_length <= max_size_inclusive {
-        return _vec;
+        return vec;
     }
 
     let max_size_inclusive = Wrapping(max_size_inclusive);
@@ -19,22 +17,20 @@ where
 
     let split_off_index = max_of(vec_length - max_size_inclusive, Wrapping(0));
 
-    let o = _vec.split_at(split_off_index);
+    let o = vec.split_at(split_off_index);
 
     o.1.to_vec()
 }
 
 pub fn push_to_last_and_maintain_capacity_of_vector<T>(
-    vec: Vec<T>,
+    mut vec: Vec<T>,
     max_size_inclusive: usize,
     item: T,
 ) -> Vec<T>
 where
-    T: Clone,
-    T: Debug,
+    T: Clone + Debug,
 {
-    let mut _vec = vec;
-    _vec.push(item);
+    vec.push(item);
 
-    truncate_from_last(_vec, max_size_inclusive)
+    truncate_from_last(vec, max_size_inclusive)
 }

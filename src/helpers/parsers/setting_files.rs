@@ -39,6 +39,6 @@ impl AppConfig {
 
         let s = Self::settings_file();
 
-        Ok(AppConfig { app_settings: s? })
+        Ok(Self { app_settings: s? })
     }
 }

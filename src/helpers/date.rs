@@ -11,6 +11,6 @@ pub fn get_unix_timestamp_us() -> i64 {
     now.timestamp_nanos()
 }
 
-pub fn get_elapsed_time_ms(start: &Instant) -> u128 {
+pub fn get_elapsed_time_ms(start: Instant) -> u128 {
     start.elapsed().as_millis()
 }

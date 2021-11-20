@@ -2,7 +2,6 @@ use crate::common::models::api::{ErrorResponse, SuccessResponse};
 use crate::NotFoundResponse;
 use actix_http::StatusCode;
 use actix_web::{HttpResponse, HttpResponseBuilder};
-use std::ops::Deref;
 
 pub fn not_found() -> HttpResponse {
     HttpResponse::NotFound().json(NotFoundResponse {
@@ -29,7 +28,7 @@ pub fn success_resp(data: impl serde::Serialize) -> HttpResponse {
         Err(e) => error_resp(
             HttpResponse::InternalServerError(),
             StatusCode::INTERNAL_SERVER_ERROR,
-            Some(e.to_string().deref()),
+            Some(&*e.to_string()),
         ),
     }
 }
