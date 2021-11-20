@@ -3,6 +3,7 @@ use crate::common::models::api::Health;
 use actix_web::{get, web, Error, HttpResponse};
 
 #[get("/health")]
+#[allow(clippy::unused_async)]
 async fn health() -> anyhow::Result<HttpResponse, Error> {
     let res = Health { is_health_ok: true };
 

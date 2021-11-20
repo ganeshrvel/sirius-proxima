@@ -19,6 +19,7 @@ pub struct SAlphaPingResponse {
 }
 
 #[put("/ping")]
+#[allow(clippy::unused_async)]
 pub async fn salpha_ping(
     data: web::Data<Mutex<AppState>>,
     req: Json<SAlphaPingRequest>,

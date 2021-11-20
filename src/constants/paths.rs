@@ -1,1 +1,1 @@
-pub struct Paths {}
+pub struct _Paths {}

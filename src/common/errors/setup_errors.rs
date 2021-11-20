@@ -7,13 +7,13 @@ pub enum SetupError<'a> {
     Constants(&'a str, &'a str),
 
     #[error("a setting file error has occured: {0:?}")]
-    Settings(&'a str),
+    _Settings(&'a str),
 
     #[error("[2:?] An error occurred while reading the {0:?} log file: {1:?}")]
     LogFile(&'a str, io::Error, &'a str),
 
     #[error("[1:?] failed to initialize the logger: {0:?}")]
-    LoggerError(anyhow::Error, &'a str),
+    _LoggerError(anyhow::Error, &'a str),
 
     #[error("[2:?] An error occurred while reading the {0:?} file: {1:?}")]
     #[allow(dead_code)]

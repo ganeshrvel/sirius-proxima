@@ -4,15 +4,18 @@
     clippy::restriction,
     clippy::pedantic,
     clippy::nursery,
-    clippy::cargo
+    clippy::cargo,
+    clippy::print_stdout
 )]
-#![allow(clippy::missing_docs_in_private_items)]
-#![allow(clippy::future_not_send)]
-#![allow(clippy::implicit_return)]
-#![allow(clippy::similar_names)]
-#![allow(clippy::module_name_repetitions)]
-#![allow(clippy::blanket_clippy_restriction_lints)]
-#![warn(clippy::print_stdout)]
+#![allow(
+    clippy::missing_docs_in_private_items,
+    clippy::future_not_send,
+    clippy::implicit_return,
+    clippy::similar_names,
+    clippy::blanket_clippy_restriction_lints,
+    clippy::module_name_repetitions
+)]
+
 
 #[macro_use]
 mod macros;
@@ -36,7 +39,7 @@ use crate::common::states::app_state::AppState;
 use crate::constants::app_env::AppEnv;
 use crate::constants::default_values::DefaultValues;
 use crate::constants::strings::Strings;
-use crate::helpers::actix::actix::{get_identity_service, get_json_err};
+use crate::helpers::actix::actix_helpers::{get_identity_service, get_json_err};
 use crate::helpers::sanitizers::sanitize_constants;
 use crate::utils::logs::fern_log::setup_logging;
 use crate::utils::vectors::push_to_last_and_maintain_capacity_of_vector;
@@ -44,17 +47,26 @@ use crate::utils::vectors::push_to_last_and_maintain_capacity_of_vector;
 #[actix_web::main]
 async fn main() -> anyhow::Result<()> {
     #[allow(clippy::print_stdout)]
-    println!("initializing the logger...");
+    {
+        println!("initializing the logger...");
+    }
     let setup = setup_logging();
-    if let Err(_e) = &setup {
-        paniq!("{:?}", setup);
+    if setup.is_err() {
+        #[allow(clippy::panic)]
+        {
+            paniq!("{:?}", setup);
+        }
     }
 
     log::debug!("-----------------");
     log::debug!("sanitizing constants");
     let sanitizer = sanitize_constants();
-    if let Err(_e) = &sanitizer {
-        paniq!("{:?}", sanitizer);
+
+    if sanitizer.is_err() {
+        #[allow(clippy::panic)]
+        {
+            paniq!("{:?}", sanitizer);
+        }
     }
 
     log::debug!("Launching {}...", Strings::APP_NAME);

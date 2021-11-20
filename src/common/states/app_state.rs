@@ -61,17 +61,20 @@ impl IotDevicesState {
                     // to prevent the `out of range` error we choose `clear memory length` to splice the vector or `maximum allowed length`, which ever is the lowest of two.
 
                     // we splice out a chunk from the vector to prevent vector size management everytime we reach the maximum allowed threshold
-                    current_activities_cloned = push_to_last_and_maintain_capacity_of_vector(
-                        current_activities_cloned,
-                        max_of(
-                            Wrapping(
-                                DefaultValues::MAX_ACTIVITIES_VECTOR_LENGTH_PER_DEVICE
-                                    - DefaultValues::MAX_ACTIVITIES_PER_DEVICE_CLEAR_SPLICE_SIZE,
+                    #[allow(clippy::integer_arithmetic)]
+                    {
+                        current_activities_cloned = push_to_last_and_maintain_capacity_of_vector(
+                            current_activities_cloned,
+                            max_of(
+                                Wrapping(
+                                    DefaultValues::MAX_ACTIVITIES_VECTOR_LENGTH_PER_DEVICE
+                                        - DefaultValues::MAX_ACTIVITIES_PER_DEVICE_CLEAR_SPLICE_SIZE,
+                                ),
+                                Wrapping(0),
                             ),
-                            Wrapping(0),
-                        ),
-                        activity_data,
-                    );
+                            activity_data,
+                        );
+                    }
                 } else {
                     current_activities_cloned.push(activity_data);
                 }

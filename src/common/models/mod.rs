@@ -1,3 +1,3 @@
-pub mod settings;
-pub mod data;
 pub mod api;
+pub mod data;
+pub mod settings;

@@ -1,4 +1,4 @@
-pub fn type_of2<T>(v: T) -> (&'static str, T) {
+pub fn _type_of2<T>(v: T) -> (&'static str, T) {
     (std::any::type_name::<T>(), v)
 }
 

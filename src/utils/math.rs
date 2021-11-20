@@ -8,7 +8,7 @@ where
     max(a, b).0
 }
 
-pub fn min_of<T>(a: Wrapping<T>, b: Wrapping<T>) -> T
+pub fn _min_of<T>(a: Wrapping<T>, b: Wrapping<T>) -> T
 where
     T: Ord,
 {
