@@ -10,4 +10,5 @@ pub struct DefaultValues<'a> {
 
 impl DefaultValues<'static> {
     pub const MAX_ACTIVITIES_VECTOR_LENGTH_PER_DEVICE: usize = 1000;
+    pub const MAX_ACTIVITIES_PER_DEVICE_CLEAR_SPLICE_SIZE: usize = 50;
 }

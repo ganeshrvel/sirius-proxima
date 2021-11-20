@@ -8,7 +8,7 @@ pub fn setup_logging() -> anyhow::Result<()> {
     let f = create_file(FilePaths::LOG);
 
     if let Err(e) = f {
-        return Err(SetupError::LogFile(FilePaths::LOG, e, "P00002").into());
+        return Err(SetupError::LogFile(FilePaths::LOG, e, "P00004").into());
     }
 
     // configure colors for the whole line

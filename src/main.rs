@@ -8,7 +8,8 @@ mod helpers;
 mod utils;
 
 use std::env;
-use std::ops::Deref;
+use std::num::Wrapping;
+use std::ops::{Deref, Sub};
 
 use actix_web::{middleware as actix_middleware, web, App, HttpServer};
 use api::helpers::responses::not_found;
@@ -19,20 +20,29 @@ use crate::common::models::api::NotFoundResponse;
 use crate::common::models::data::AppData;
 use crate::common::states::app_state::AppState;
 use crate::constants::app_env::AppEnv;
+use crate::constants::default_values::DefaultValues;
 use crate::constants::strings::Strings;
 use crate::helpers::actix::actix::{get_identity_service, get_json_err};
+use crate::helpers::sanitizers::sanitize_constants;
 use crate::utils::logs::fern_log::setup_logging;
+use crate::utils::math::{max_of, min_of};
+use crate::utils::vectors::push_to_last_and_maintain_capacity_of_vector;
 
 #[actix_web::main]
 async fn main() -> anyhow::Result<()> {
     println!("initializing the logger...");
-    let s = setup_logging();
-
-    if let Err(e) = s {
-        return Err(SetupError::LoggerError(e, "P00001").into());
+    let setup = setup_logging();
+    if let Err(e) = &setup {
+        paniq!("{:?}", setup);
     }
 
     log::debug!("-----------------");
+    log::debug!("sanitizing constants");
+    let sanitizer = sanitize_constants();
+    if let Err(e) = &sanitizer {
+        paniq!("{:?}", sanitizer);
+    }
+
     log::debug!("Launching {}...", Strings::APP_NAME);
 
     if let Err(e) = run().await {

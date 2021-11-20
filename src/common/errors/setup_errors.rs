@@ -3,6 +3,9 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum SetupError<'a> {
+    #[error("[1:?] a constant error has occured: {0:?}")]
+    Constants(&'a str, &'a str),
+
     #[error("a setting file error has occured: {0:?}")]
     Settings(&'a str),
 
