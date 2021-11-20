@@ -1,8 +1,9 @@
 use crate::common::models::data::IotDevice;
 use crate::constants::default_values::DefaultValues;
+use crate::helpers::date::get_time_now_ist;
 use crate::push_to_last_and_maintain_capacity_of_vector;
 use crate::utils::math::max_of;
-use chrono::Utc;
+use chrono::DateTime;
 use std::collections::HashMap;
 use std::num::Wrapping;
 
@@ -16,11 +17,12 @@ pub struct AppState {
 #[derive(Debug)]
 pub struct IotDevicesState {
     pub devices_activity: IotDevicesActivity,
+    pub last_activity_time: DateTime<chrono_tz::Tz>,
 }
 
 #[derive(Debug, Clone)]
 pub struct IotDeviceActivityData {
-    pub time: chrono::DateTime<Utc>,
+    pub time: DateTime<chrono_tz::Tz>,
 }
 
 impl AppState {
@@ -35,6 +37,7 @@ impl IotDevicesState {
     pub fn new() -> Self {
         Self {
             devices_activity: HashMap::new(),
+            last_activity_time: get_time_now_ist(),
         }
     }
 
@@ -89,7 +92,7 @@ impl IotDevicesState {
 impl IotDeviceActivityData {
     pub fn new() -> Self {
         Self {
-            time: chrono::Utc::now(),
+            time: get_time_now_ist(),
         }
     }
 }

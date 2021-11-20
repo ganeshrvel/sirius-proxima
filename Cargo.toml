@@ -32,6 +32,7 @@ anyhow = "1.0.44"
 thiserror = "1.0.30"
 
 chrono = "0.4.19"
+chrono-tz = { version = "0.6.0", features = [ "filter-by-regex" ] }
 
 #min-max = "^0.1.8"
 

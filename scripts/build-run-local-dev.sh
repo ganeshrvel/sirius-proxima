@@ -1,3 +1,3 @@
 #!/bin/bash
 
-cargo run
+CHRONO_TZ_TIMEZONE_FILTER="(Asia/Kolkata|UTC)" cargo run

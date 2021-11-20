@@ -31,6 +31,9 @@ pub async fn salpha_ping(
 
     println!("{:?}", data);
 
+
+
+
     let res = SAlphaPingResponse {
         short_period_buzzer_beep_duration_sec: 7,
         continuous_period_buzzer_beep_duration_sec: true,
