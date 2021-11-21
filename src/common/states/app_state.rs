@@ -22,9 +22,9 @@ impl AppState {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct IotDevicesState {
-    pub devices_activity: IotDevicesActivity,
+    pub devices_activity_bucket: IotDevicesActivity,
     pub last_activity_time: DateTime<chrono_tz::Tz>,
     pub last_activity_tz: chrono_tz::Tz,
     pub total_running_time: chrono::Duration,
@@ -33,15 +33,25 @@ pub struct IotDevicesState {
 impl IotDevicesState {
     pub fn new() -> Self {
         Self {
-            devices_activity: HashMap::new(),
+            devices_activity_bucket: HashMap::new(),
             last_activity_time: get_time_now_default_tz(),
             last_activity_tz: DefaultValues::DEFAULT_TIMEZONE,
             total_running_time: chrono::Duration::zero(),
         }
     }
 
-    fn update_iot_device_activity(&mut self, activity_data: &IotDeviceActivityData) {
-        self.total_running_time = self.last_activity_time - activity_data.clone().time;
+    fn update_iot_device_activity(
+        &mut self,
+        activity_data: &IotDeviceActivityData,
+        iot_device_activity_bucket_length: usize,
+    ) {
+        // we are cloning multiple items here to assist the intellij statical analysus since `chrono_tz` crate builds source file which is more than 8MB and the code insights will be turn off for the generated file.
+
+        // if the length of `iot device activities` is greater than 1 then set the `total_running_time` else it will be defaulted to zero
+        if iot_device_activity_bucket_length > 1 {
+            self.total_running_time = self.total_running_time
+                + (activity_data.clone().time - self.clone().last_activity_time);
+        }
 
         self.last_activity_tz = activity_data.tz;
         self.last_activity_time = activity_data.clone().time;
@@ -51,13 +61,19 @@ impl IotDevicesState {
         let activity_data = IotDeviceActivityData::new();
         let activity_data_cloned = activity_data.clone();
 
-        let existing_activity_bucket = self.devices_activity.get(&iot_device);
+        // false positive linting
+        #[allow(unused_assignments)]
+        let mut iot_device_activity_bucket_length: usize = 0;
+
+        let existing_activity_bucket = self.devices_activity_bucket.get(&iot_device);
 
         match existing_activity_bucket {
             None => {
-                self.devices_activity
+                self.devices_activity_bucket
                     .entry(iot_device)
                     .or_insert_with(|| vec![activity_data]);
+
+                iot_device_activity_bucket_length = 1;
             }
             Some(current_activities) => {
                 let mut current_activities_cloned = current_activities.clone();
@@ -90,12 +106,14 @@ impl IotDevicesState {
                     current_activities_cloned.push(activity_data);
                 }
 
-                self.devices_activity
+                iot_device_activity_bucket_length = current_activities_cloned.len();
+
+                self.devices_activity_bucket
                     .insert(iot_device, current_activities_cloned);
             }
         };
 
-        self.update_iot_device_activity(&activity_data_cloned);
+        self.update_iot_device_activity(&activity_data_cloned, iot_device_activity_bucket_length);
     }
 }
 
