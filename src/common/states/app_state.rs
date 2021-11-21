@@ -41,8 +41,8 @@ impl IotDevicesState {
     }
 
     fn update_activity_time(&mut self, activity_data: &IotDeviceActivityData) {
-        self.last_activity_time = activity_data.time;
         self.last_activity_tz = activity_data.tz;
+        self.last_activity_time = activity_data.time;
     }
 
     pub fn insert_new(&mut self, iot_device: IotDevice) {
@@ -54,7 +54,8 @@ impl IotDevicesState {
         match existing_activity_bucket {
             None => {
                 self.devices_activity
-                    .insert(iot_device, vec![activity_data]);
+                    .entry(iot_device)
+                    .or_insert_with(|| vec![activity_data]);
             }
             Some(current_activities) => {
                 let mut current_activities_cloned = current_activities.clone();
