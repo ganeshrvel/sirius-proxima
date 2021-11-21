@@ -42,7 +42,7 @@ impl IotDevicesState {
 
     fn update_activity_time(&mut self, activity_data: &IotDeviceActivityData) {
         self.last_activity_tz = activity_data.tz;
-        self.last_activity_time = activity_data.time;
+        self.last_activity_time = activity_data.clone().time;
     }
 
     pub fn insert_new(&mut self, iot_device: IotDevice) {
