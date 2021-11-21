@@ -1,6 +1,6 @@
 use crate::common::models::data::IotDevice;
 use crate::constants::default_values::DefaultValues;
-use crate::helpers::date::get_time_now_ist;
+use crate::helpers::date::get_time_now_default_tz;
 use crate::push_to_last_and_maintain_capacity_of_vector;
 use crate::utils::math::max_of;
 use chrono::DateTime;
@@ -14,17 +14,6 @@ pub struct AppState {
     pub iot_devices_state: IotDevicesState,
 }
 
-#[derive(Debug)]
-pub struct IotDevicesState {
-    pub devices_activity: IotDevicesActivity,
-    pub last_activity_time: DateTime<chrono_tz::Tz>,
-}
-
-#[derive(Debug, Clone)]
-pub struct IotDeviceActivityData {
-    pub time: DateTime<chrono_tz::Tz>,
-}
-
 impl AppState {
     pub fn new() -> Self {
         Self {
@@ -33,11 +22,19 @@ impl AppState {
     }
 }
 
+#[derive(Debug)]
+pub struct IotDevicesState {
+    pub devices_activity: IotDevicesActivity,
+    pub last_activity_time: DateTime<chrono_tz::Tz>,
+    pub last_activity_tz: chrono_tz::Tz,
+}
+
 impl IotDevicesState {
     pub fn new() -> Self {
         Self {
             devices_activity: HashMap::new(),
-            last_activity_time: get_time_now_ist(),
+            last_activity_time: get_time_now_default_tz(),
+            last_activity_tz: DefaultValues::DEFAULT_TIMEZONE,
         }
     }
 
@@ -89,10 +86,17 @@ impl IotDevicesState {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct IotDeviceActivityData {
+    pub time: DateTime<chrono_tz::Tz>,
+    pub tz: chrono_tz::Tz,
+}
+
 impl IotDeviceActivityData {
     pub fn new() -> Self {
         Self {
-            time: get_time_now_ist(),
+            time: get_time_now_default_tz(),
+            tz: DefaultValues::DEFAULT_TIMEZONE,
         }
     }
 }

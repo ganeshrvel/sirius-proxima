@@ -17,14 +17,14 @@ pub fn _get_elapsed_time_ms(start: Instant) -> u128 {
     start.elapsed().as_millis()
 }
 
-pub fn utc_to_ist(date: DateTime<Utc>) -> DateTime<Tz> {
+pub fn utc_to_default_tz(date: DateTime<Utc>) -> DateTime<Tz> {
     let tz: Tz = DefaultValues::DEFAULT_TIMEZONE;
 
     date.with_timezone(&tz)
 }
 
-pub fn get_time_now_ist() -> DateTime<Tz> {
+pub fn get_time_now_default_tz() -> DateTime<Tz> {
     let time_now = chrono::Utc::now();
 
-    utc_to_ist(time_now)
+    utc_to_default_tz(time_now)
 }
