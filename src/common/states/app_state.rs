@@ -27,6 +27,7 @@ pub struct IotDevicesState {
     pub devices_activity: IotDevicesActivity,
     pub last_activity_time: DateTime<chrono_tz::Tz>,
     pub last_activity_tz: chrono_tz::Tz,
+    pub running_time: chrono::Duration,
 }
 
 impl IotDevicesState {
@@ -35,18 +36,25 @@ impl IotDevicesState {
             devices_activity: HashMap::new(),
             last_activity_time: get_time_now_default_tz(),
             last_activity_tz: DefaultValues::DEFAULT_TIMEZONE,
+            running_time: chrono::Duration::zero(),
         }
+    }
+
+    fn update_activity_time(&mut self, activity_data: &IotDeviceActivityData) {
+        self.last_activity_time = activity_data.time;
+        self.last_activity_tz = activity_data.tz;
     }
 
     pub fn insert_new(&mut self, iot_device: IotDevice) {
         let activity_data = IotDeviceActivityData::new();
+        let activity_data_cloned = activity_data.clone();
 
         let existing_activity_bucket = self.devices_activity.get(&iot_device);
 
         match existing_activity_bucket {
             None => {
                 self.devices_activity
-                    .insert(iot_device, Vec::<IotDeviceActivityData>::new());
+                    .insert(iot_device, vec![activity_data]);
             }
             Some(current_activities) => {
                 let mut current_activities_cloned = current_activities.clone();
@@ -83,6 +91,8 @@ impl IotDevicesState {
                     .insert(iot_device, current_activities_cloned);
             }
         };
+
+        self.update_activity_time(&activity_data_cloned);
     }
 }
 
