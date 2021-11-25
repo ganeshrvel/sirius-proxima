@@ -31,7 +31,7 @@ pub async fn salpha_ping(
     data.iot_devices_state
         .insert_new(req.device_type, &req.device);
 
-    println!("{:?}", data);
+   // println!("{:?}", data);
 
     let res = SAlphaPingResponse {
         short_period_buzzer_beep_duration_sec: 7,
