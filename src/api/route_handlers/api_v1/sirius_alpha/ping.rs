@@ -4,12 +4,13 @@ use actix_web::web::Json;
 use actix_web::{http, put, web, HttpResponse};
 use serde::{Deserialize, Serialize};
 
-use crate::common::models::data::IotDevice;
+use crate::common::models::data::{IotDevice, IotDeviceType};
 use std::sync::Mutex;
 
 #[derive(Debug, serde::Deserialize, Clone)]
 pub struct SAlphaPingRequest {
     pub device: IotDevice,
+    pub device_type: IotDeviceType,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -27,7 +28,8 @@ pub async fn salpha_ping(
     //todo fix this
     let mut data = data.lock().unwrap();
 
-    data.iot_devices_state.insert_new(req.device.clone());
+    data.iot_devices_state
+        .insert_new(req.device_type, &req.device);
 
     println!("{:?}", data);
 

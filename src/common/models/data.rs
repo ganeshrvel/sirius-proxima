@@ -28,6 +28,18 @@ pub enum IotDevice {
     GroundWell(SAlphaDeviceDetails),
 }
 
+#[derive(Debug, Deserialize, Clone, Eq, PartialEq, Hash, Copy)]
+pub enum IotDeviceType {
+    #[serde(rename = "water_heater")]
+    WaterHeater,
+
+    #[serde(rename = "bore_well")]
+    BoreWell,
+
+    #[serde(rename = "ground_well")]
+    GroundWell,
+}
+
 #[derive(Debug, Deserialize, Clone, Eq, PartialEq, Hash)]
 pub struct SAlphaDeviceDetails {
     pub device_name: String,
