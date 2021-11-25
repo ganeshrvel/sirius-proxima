@@ -12,12 +12,16 @@ type IotDevicesActivityBucket = HashMap<IotDeviceType, IotDevicesActivityContain
 #[derive(Debug)]
 pub struct AppState {
     pub iot_devices_state: IotDevicesState,
+    pub launch_time: DateTime<chrono_tz::Tz>,
+    pub launch_time_tz: chrono_tz::Tz,
 }
 
 impl AppState {
     pub fn new() -> Self {
         Self {
             iot_devices_state: IotDevicesState::new(),
+            launch_time: get_time_now_default_tz(),
+            launch_time_tz: DefaultValues::DEFAULT_TIMEZONE,
         }
     }
 }
@@ -25,34 +29,13 @@ impl AppState {
 #[derive(Debug, Clone)]
 pub struct IotDevicesState {
     pub devices_activity_bucket: IotDevicesActivityBucket,
-    // pub last_activity_time: DateTime<chrono_tz::Tz>,
-    // pub last_activity_tz: chrono_tz::Tz,
 }
 
 impl IotDevicesState {
     pub fn new() -> Self {
         Self {
             devices_activity_bucket: HashMap::new(),
-            // last_activity_time: get_time_now_default_tz(),
-            // last_activity_tz: DefaultValues::DEFAULT_TIMEZONE,
         }
-    }
-
-    fn update_iot_device_activity(
-        &mut self,
-        activity_data: &IotDevicesActivityContainer,
-        iot_device_activity_bucket_length: usize,
-    ) {
-        /* // we are cloning multiple items here to assist the intellij statical analysus since `chrono_tz` crate builds source file which is more than 8MB and the code insights will be turn off for the generated file.
-
-        // if the length of `iot device activities` is greater than 1 then set the `total_running_time` else it will be defaulted to zero
-        if iot_device_activity_bucket_length > 1 {
-            self.total_running_time = self.total_running_time
-                + (activity_data.clone().time - self.clone().last_activity_time);
-        }
-
-        self.last_activity_tz = activity_data.tz;
-        self.last_activity_time = activity_data.clone().time;*/
     }
 
     pub fn insert_new(&mut self, iot_device_type: IotDeviceType, iot_device: &IotDevice) {
