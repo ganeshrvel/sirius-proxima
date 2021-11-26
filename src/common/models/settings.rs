@@ -20,6 +20,8 @@ pub struct Server {
 
     pub cookie_max_age_secs: i64,
 
+    pub api_secret_key: String,
+
     pub api_secret_token: String,
 
     pub ip: String,

@@ -1,4 +1,4 @@
-use crate::common::models::data::{IotDevice, IotDeviceType};
+use crate::common::models::data::IotDevice;
 use crate::constants::default_values::DefaultValues;
 use crate::helpers::date::get_time_now_default_tz;
 use crate::push_to_last_and_maintain_capacity_of_vector;
@@ -7,7 +7,7 @@ use chrono::DateTime;
 use std::collections::HashMap;
 use std::num::Wrapping;
 
-type IotDevicesActivityBucket = HashMap<IotDeviceType, IotDevicesActivityContainer>;
+type IotDevicesActivityBucket = HashMap<String, IotDevicesActivityContainer>;
 
 #[derive(Debug)]
 pub struct AppState {
@@ -38,24 +38,24 @@ impl IotDevicesState {
         }
     }
 
-    pub fn insert_new(&mut self, iot_device_type: IotDeviceType, iot_device: &IotDevice) {
-        let existing_activity_bucket = self.devices_activity_bucket.get(&iot_device_type);
+    pub fn insert_new(&mut self, device_id: &str, iot_device: &IotDevice) {
+        let existing_activity_bucket = self.devices_activity_bucket.get(device_id);
         match existing_activity_bucket {
             None => {
                 let next_iot_device_activity_container =
-                    IotDevicesActivityContainer::new(iot_device_type, iot_device);
+                    IotDevicesActivityContainer::new(device_id, iot_device);
 
                 self.devices_activity_bucket
-                    .entry(iot_device_type)
+                    .entry(device_id.to_string())
                     .or_insert_with(|| next_iot_device_activity_container);
             }
             Some(current_iot_device_activity_container) => {
                 let next_iot_device_activity_container = current_iot_device_activity_container
                     .clone()
-                    .update(iot_device_type, iot_device);
+                    .update(device_id, iot_device);
 
                 self.devices_activity_bucket
-                    .insert(iot_device_type, next_iot_device_activity_container);
+                    .insert(device_id.to_string(), next_iot_device_activity_container);
             }
         }
     }
@@ -70,9 +70,8 @@ pub struct IotDevicesActivityContainer {
 }
 
 impl IotDevicesActivityContainer {
-    pub fn new(iot_device_type: IotDeviceType, device_data: &IotDevice) -> Self {
-        let next_device_activity_data_unit =
-            IotDeviceActivityDataUnit::new(iot_device_type, device_data);
+    pub fn new(device_id: &str, device_data: &IotDevice) -> Self {
+        let next_device_activity_data_unit = IotDeviceActivityDataUnit::new(device_id, device_data);
 
         let last_activity_time = next_device_activity_data_unit.time;
         let last_activity_tz = next_device_activity_data_unit.tz;
@@ -85,10 +84,9 @@ impl IotDevicesActivityContainer {
         }
     }
 
-    pub fn update(self, iot_device_type: IotDeviceType, device_data: &IotDevice) -> Self {
+    pub fn update(self, device_id: &str, device_data: &IotDevice) -> Self {
         let mut current_iot_device_activity_container_data_storage = self.data_storage.clone();
-        let next_device_activity_data_unit =
-            IotDeviceActivityDataUnit::new(iot_device_type, device_data);
+        let next_device_activity_data_unit = IotDeviceActivityDataUnit::new(device_id, device_data);
 
         let next_device_activity_data_unit_clone = next_device_activity_data_unit.clone();
 
@@ -145,16 +143,16 @@ pub struct IotDeviceActivityDataUnit {
     pub time: DateTime<chrono_tz::Tz>,
     pub tz: chrono_tz::Tz,
     pub device_data: IotDevice,
-    pub iot_device_type: IotDeviceType,
+    pub device_id: String,
 }
 
 impl IotDeviceActivityDataUnit {
-    pub fn new(iot_device_type: IotDeviceType, device_data: &IotDevice) -> Self {
+    pub fn new(device_id: &str, device_data: &IotDevice) -> Self {
         Self {
             time: get_time_now_default_tz(),
             tz: DefaultValues::DEFAULT_TIMEZONE,
             device_data: device_data.clone(),
-            iot_device_type,
+            device_id: device_id.to_string(),
         }
     }
 }

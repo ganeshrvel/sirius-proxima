@@ -11,16 +11,29 @@ pub mod api_v1;
 /// path: {/api}'/v1'
 pub fn api_v1_scope(server: &Server) -> Scope {
     let api_secret_token = server.api_secret_token.clone();
+    let api_secret_key = server.api_secret_key.clone();
 
     web::scope("/v1")
-        .guard(guard::fn_guard(move |req| {
-            match req.headers().get("API_TOKEN") {
-                Some(value) => value == api_secret_token.as_str(),
+        .guard(guard::fn_guard(move |head| {
+            let header_value = head.headers.get(&api_secret_key);
+
+            match header_value {
                 None => false,
+                Some(d) => d.eq(&api_secret_token),
+            }
+        }))
+        .guard(guard::fn_guard(move |head| {
+            let header_value = head.headers.get("X-Device-id");
+
+            match header_value {
+                None => false,
+                Some(d) => !d.is_empty(),
             }
         }))
         .service(sirius_alpha_scope(server))
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /// api root scope
 /// path: {/api}'/'
