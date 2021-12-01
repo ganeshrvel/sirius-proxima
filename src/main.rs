@@ -99,7 +99,7 @@ async fn run() -> anyhow::Result<()> {
     let shared_state = web::Data::new(Mutex::new(app_state));
 
     HttpServer::new(move || {
-        let system_data_cloned_spawn = system_data_cloned.clone();
+        let system_data_cloned_for_spawn = system_data_cloned.clone();
 
         App::new()
             .wrap(actix_middleware::Logger::default())
@@ -108,19 +108,19 @@ async fn run() -> anyhow::Result<()> {
                     .header("Permissions-Policy", "interest-cohort=()"),
             )
             .wrap(get_identity_service(
-                &*system_data_cloned_spawn
+                &*system_data_cloned_for_spawn
                     .config
                     .app_settings
                     .settings
                     .server
                     .cookie_secret,
-                &*system_data_cloned_spawn
+                &*system_data_cloned_for_spawn
                     .config
                     .app_settings
                     .settings
                     .server
                     .domain,
-                system_data_cloned_spawn
+                system_data_cloned_for_spawn
                     .config
                     .app_settings
                     .settings
@@ -132,9 +132,9 @@ async fn run() -> anyhow::Result<()> {
                 actix_middleware::TrailingSlash::Trim,
             ))
             .service(api::api_scope(
-                &system_data_cloned_spawn.config.app_settings.settings.server,
+                &system_data_cloned_for_spawn.config.app_settings.settings.server,
             ))
-            .app_data(system_data_cloned_spawn)
+            .app_data(system_data_cloned_for_spawn)
             .app_data(get_json_err())
             .app_data(shared_state.clone())
             .default_service(web::to(not_found))

@@ -2,7 +2,7 @@ pub mod helpers;
 pub mod route_handlers;
 
 use crate::api::route_handlers::{api_root_services, api_v1_scope};
-use crate::common::models::settings::Server;
+use crate::common::models::app_settings::Server;
 use actix_web::{guard, web, Scope};
 
 /// api scope

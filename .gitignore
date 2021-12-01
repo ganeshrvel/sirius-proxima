@@ -27,3 +27,5 @@ settings.yaml
 env.config
 Rocket.toml
 ./Rocket.toml
+app-settings.yaml
+iot-settings.yaml

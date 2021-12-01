@@ -1,6 +1,6 @@
 use crate::api::route_handlers::api_root::unprotected;
 use crate::api::route_handlers::api_v1::sirius_alpha::sirius_alpha_scope;
-use crate::common::models::settings::Server;
+use crate::common::models::app_settings::Server;
 use actix_web::web::ServiceConfig;
 use actix_web::{guard, web, Scope};
 

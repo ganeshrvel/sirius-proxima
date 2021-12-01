@@ -11,7 +11,8 @@ pub struct FilePaths<'a> {
 }
 
 impl FilePaths<'static> {
-    pub const SETTINGS: &'static str = "./settings.yaml";
+    pub const APP_SETTINGS: &'static str = "./app-settings.yaml";
+    pub const IOT_SETTINGS: &'static str = "./iot-settings.yaml";
     pub const LOG: &'static str = if AppEnv::IS_RELEASE {
         "./logs/logging-release.log"
     } else {

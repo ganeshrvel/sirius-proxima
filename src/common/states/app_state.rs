@@ -1,4 +1,4 @@
-use crate::common::models::data::IotDevice;
+use crate::common::models::iot_devices::IotDevice;
 use crate::constants::default_values::DefaultValues;
 use crate::helpers::date::get_time_now_default_tz;
 use crate::push_to_last_and_maintain_capacity_of_vector;
@@ -46,7 +46,7 @@ impl IotDevicesState {
                     IotDevicesActivityContainer::new(device_id, iot_device);
 
                 self.devices_activity_bucket
-                    .entry(device_id.to_string())
+                    .entry(device_id.to_owned())
                     .or_insert_with(|| next_iot_device_activity_container);
             }
             Some(current_iot_device_activity_container) => {
@@ -55,7 +55,7 @@ impl IotDevicesState {
                     .update(device_id, iot_device);
 
                 self.devices_activity_bucket
-                    .insert(device_id.to_string(), next_iot_device_activity_container);
+                    .insert(device_id.to_owned(), next_iot_device_activity_container);
             }
         }
     }
@@ -152,7 +152,7 @@ impl IotDeviceActivityDataUnit {
             time: get_time_now_default_tz(),
             tz: DefaultValues::DEFAULT_TIMEZONE,
             device_data: device_data.clone(),
-            device_id: device_id.to_string(),
+            device_id: device_id.to_owned(),
         }
     }
 }

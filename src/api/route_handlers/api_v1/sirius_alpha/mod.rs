@@ -1,5 +1,5 @@
 use crate::api::route_handlers::api_v1::sirius_alpha::ping::salpha_ping;
-use crate::common::models::settings::Server;
+use crate::common::models::app_settings::Server;
 use actix_web::web::ServiceConfig;
 use actix_web::{web, Scope};
 
