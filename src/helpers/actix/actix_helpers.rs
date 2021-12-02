@@ -9,8 +9,8 @@ pub fn get_json_err() -> JsonConfig {
 }
 
 pub fn get_identity_service(
-    cookie_secret: &str,
-    domain: &str,
+    cookie_secret: String,
+    domain: String,
     cookie_max_age_secs: i64,
 ) -> IdentityService<CookieIdentityPolicy> {
     IdentityService::new(

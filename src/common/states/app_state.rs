@@ -6,8 +6,11 @@ use crate::utils::math::max_of;
 use chrono::DateTime;
 use std::collections::HashMap;
 use std::num::Wrapping;
+use std::sync::Mutex;
+use actix_web::web;
 
-type IotDevicesActivityBucket = HashMap<String, IotDevicesActivityContainer>;
+pub type IotDevicesActivityBucket = HashMap<String, IotDevicesActivityContainer>;
+pub type SharedAppState = web::Data<Mutex<AppState>>;
 
 #[derive(Debug)]
 pub struct AppState {

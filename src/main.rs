@@ -16,7 +16,6 @@
     clippy::module_name_repetitions
 )]
 
-
 #[macro_use]
 mod macros;
 
@@ -85,61 +84,71 @@ async fn run() -> anyhow::Result<()> {
         env::set_var("RUST_LOG", "actix_web=debug,actix_server=info");
     }
 
-    let data = AppData::new().await?;
-    let data = actix_web::web::Data::new(data);
+    // app data
+    let app_data = AppData::new().await?;
+    let shared_app_data = actix_web::web::Data::new(app_data);
+    let server_url_with_protocol = shared_app_data
+        .config
+        .app_settings
+        .settings
+        .server
+        .get_uri(true);
+    let server_url_without_protocol = shared_app_data
+        .config
+        .app_settings
+        .settings
+        .server
+        .get_uri(false);
+    let cookie_secret = shared_app_data
+        .config
+        .app_settings
+        .settings
+        .server
+        .cookie_secret
+        .clone();
+    let domain = shared_app_data
+        .config
+        .app_settings
+        .settings
+        .server
+        .domain
+        .clone();
+    let cookie_max_age_secs = shared_app_data
+        .config
+        .app_settings
+        .settings
+        .server
+        .cookie_max_age_secs;
+    let server = shared_app_data.config.app_settings.settings.server.clone();
+    log::info!("starting the server on: {}", server_url_with_protocol);
 
-    log::info!(
-        "starting the server on: {}",
-        data.config.app_settings.settings.server.get_uri(true)
-    );
-
-    let system_data_cloned = data.clone();
-
+    // app state
     let app_state = AppState::new();
     let shared_state = web::Data::new(Mutex::new(app_state));
 
     HttpServer::new(move || {
-        let system_data_cloned_for_spawn = system_data_cloned.clone();
-
         App::new()
             .wrap(actix_middleware::Logger::default())
             .wrap(
                 actix_middleware::DefaultHeaders::new()
                     .header("Permissions-Policy", "interest-cohort=()"),
             )
-            .wrap(get_identity_service(
-                &*system_data_cloned_for_spawn
-                    .config
-                    .app_settings
-                    .settings
-                    .server
-                    .cookie_secret,
-                &*system_data_cloned_for_spawn
-                    .config
-                    .app_settings
-                    .settings
-                    .server
-                    .domain,
-                system_data_cloned_for_spawn
-                    .config
-                    .app_settings
-                    .settings
-                    .server
-                    .cookie_max_age_secs,
-            ))
             .wrap(actix_middleware::Compress::default())
             .wrap(actix_middleware::NormalizePath::new(
                 actix_middleware::TrailingSlash::Trim,
             ))
-            .service(api::api_scope(
-                &system_data_cloned_for_spawn.config.app_settings.settings.server,
+            .wrap(get_identity_service(
+                cookie_secret.clone(),
+                domain.clone(),
+                cookie_max_age_secs,
             ))
-            .app_data(system_data_cloned_for_spawn)
+            .service(api::api_scope(&server))
+            .app_data(shared_app_data.clone())
             .app_data(get_json_err())
             .app_data(shared_state.clone())
             .default_service(web::to(not_found))
     })
-    .bind(data.config.app_settings.settings.server.get_uri(false))?
+    .bind(server_url_without_protocol)?
     .run()
     .await?;
 
