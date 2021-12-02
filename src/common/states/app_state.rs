@@ -1,13 +1,15 @@
-use crate::common::models::iot_devices::IotDevice;
+use crate::common::models::data::SharedAppData;
+use crate::common::models::iot_devices::{IotDevice, IotDeviceType};
+use crate::common::models::iot_settings::{IotSettings, SAlphaIotPresets};
 use crate::constants::default_values::DefaultValues;
 use crate::helpers::date::get_time_now_default_tz;
 use crate::push_to_last_and_maintain_capacity_of_vector;
 use crate::utils::math::max_of;
-use chrono::DateTime;
+use actix_web::web;
+use chrono::{DateTime, Duration};
 use std::collections::HashMap;
 use std::num::Wrapping;
 use std::sync::Mutex;
-use actix_web::web;
 
 pub type IotDevicesActivityBucket = HashMap<String, IotDevicesActivityContainer>;
 pub type SharedAppState = web::Data<Mutex<AppState>>;
@@ -41,21 +43,31 @@ impl IotDevicesState {
         }
     }
 
-    pub fn insert_new(&mut self, device_id: &str, iot_device: &IotDevice) {
+    pub fn insert_new(
+        &mut self,
+        device_id: &str,
+        device_type: IotDeviceType,
+        iot_device: &IotDevice,
+        shared_app_data: &SharedAppData,
+    ) {
         let existing_activity_bucket = self.devices_activity_bucket.get(device_id);
         match existing_activity_bucket {
             None => {
                 let next_iot_device_activity_container =
-                    IotDevicesActivityContainer::new(device_id, iot_device);
+                    IotDevicesActivityContainer::new(device_id, device_type, iot_device);
 
                 self.devices_activity_bucket
                     .entry(device_id.to_owned())
                     .or_insert_with(|| next_iot_device_activity_container);
             }
             Some(current_iot_device_activity_container) => {
-                let next_iot_device_activity_container = current_iot_device_activity_container
-                    .clone()
-                    .update(device_id, iot_device);
+                let next_iot_device_activity_container =
+                    current_iot_device_activity_container.clone().update(
+                        device_id,
+                        device_type,
+                        iot_device,
+                        &shared_app_data.config.iot_settings,
+                    );
 
                 self.devices_activity_bucket
                     .insert(device_id.to_owned(), next_iot_device_activity_container);
@@ -67,29 +79,45 @@ impl IotDevicesState {
 #[derive(Debug, Clone)]
 pub struct IotDevicesActivityContainer {
     pub data_storage: Vec<IotDeviceActivityDataUnit>,
+    pub device_type: IotDeviceType,
+    pub device_id: String,
     pub last_activity_time: DateTime<chrono_tz::Tz>,
     pub last_activity_tz: chrono_tz::Tz,
     pub total_running_time: chrono::Duration,
 }
 
+struct IotDevicesActivityTime {
+    pub total_running_time: chrono::Duration,
+}
+
 impl IotDevicesActivityContainer {
-    pub fn new(device_id: &str, device_data: &IotDevice) -> Self {
-        let next_device_activity_data_unit = IotDeviceActivityDataUnit::new(device_id, device_data);
+    pub fn new(device_id: &str, device_type: IotDeviceType, device_data: &IotDevice) -> Self {
+        let next_device_activity_data_unit =
+            IotDeviceActivityDataUnit::new(device_id, device_type, device_data);
 
         let last_activity_time = next_device_activity_data_unit.time;
         let last_activity_tz = next_device_activity_data_unit.tz;
 
         Self {
             data_storage: vec![next_device_activity_data_unit],
+            device_type,
+            device_id: device_id.to_owned(),
             last_activity_time,
             last_activity_tz,
             total_running_time: chrono::Duration::zero(),
         }
     }
 
-    pub fn update(self, device_id: &str, device_data: &IotDevice) -> Self {
+    fn update(
+        self,
+        device_id: &str,
+        device_type: IotDeviceType,
+        device_data: &IotDevice,
+        iot_settings: &IotSettings,
+    ) -> Self {
         let mut current_iot_device_activity_container_data_storage = self.data_storage.clone();
-        let next_device_activity_data_unit = IotDeviceActivityDataUnit::new(device_id, device_data);
+        let next_device_activity_data_unit =
+            IotDeviceActivityDataUnit::new(device_id, device_type, device_data);
 
         let next_device_activity_data_unit_clone = next_device_activity_data_unit.clone();
 
@@ -122,22 +150,77 @@ impl IotDevicesActivityContainer {
             current_iot_device_activity_container_data_storage.push(next_device_activity_data_unit);
         }
 
-        let total_running_time = self.total_running_time
-            + (next_device_activity_data_unit_clone.time - self.last_activity_time);
-
-        let last_activity_tz = next_device_activity_data_unit_clone.tz;
-
         // we are cloning multiple items here to assist the intellij statical analysus since `chrono_tz` crate builds source file which is more than 8MB and the code insights will be turn off for the generated file.
-
+        let last_activity_tz = next_device_activity_data_unit_clone.tz;
+        let last_activity_time: DateTime<chrono_tz::Tz>;
         #[allow(clippy::redundant_clone)]
-        let last_activity_time = next_device_activity_data_unit_clone.clone().time;
+        {
+            last_activity_time = next_device_activity_data_unit_clone.time.clone();
+        }
+
+        let IotDevicesActivityTime { total_running_time } = self.fetch_fetch_activity_time(
+            &next_device_activity_data_unit_clone,
+            device_type,
+            iot_settings,
+        );
 
         Self {
             total_running_time,
             last_activity_time,
             data_storage: current_iot_device_activity_container_data_storage,
+            device_type,
             last_activity_tz,
+            device_id: device_id.to_owned(),
         }
+    }
+
+    fn fetch_fetch_activity_time(
+        self,
+        next_device_activity_data_unit: &IotDeviceActivityDataUnit,
+        device_type: IotDeviceType,
+        iot_settings: &IotSettings,
+    ) -> IotDevicesActivityTime {
+        match device_type {
+            IotDeviceType::RoofWaterHeater => self.fetch_fetch_activity_time_salpha(
+                next_device_activity_data_unit,
+                &iot_settings.settings.presets.roof_water_heater,
+            ),
+            IotDeviceType::BoreWellMotor => self.fetch_fetch_activity_time_salpha(
+                next_device_activity_data_unit,
+                &iot_settings.settings.presets.bore_well_motor,
+            ),
+            IotDeviceType::GroundWellMotor => self.fetch_fetch_activity_time_salpha(
+                next_device_activity_data_unit,
+                &iot_settings.settings.presets.ground_well_motor,
+            ),
+        }
+    }
+
+    fn fetch_fetch_activity_time_salpha(
+        self,
+        next_device_activity_data_unit: &IotDeviceActivityDataUnit,
+        salpha_presets: &SAlphaIotPresets,
+    ) -> IotDevicesActivityTime {
+        // we are cloning multiple items here to assist the intellij statical analysus since `chrono_tz` crate builds source file which is more than 8MB and the code insights will be turn off for the generated file.
+        let next_device_activity_time: DateTime<chrono_tz::Tz>;
+        #[allow(clippy::redundant_clone)]
+        {
+            next_device_activity_time = next_device_activity_data_unit.time.clone();
+        }
+
+        let total_running_time: Duration = (|| {
+            let time_diff: Duration = next_device_activity_time - self.last_activity_time;
+
+            // if the time difference between the [next_device_activity_time] and the [last_activity_time] is eq.to or greater than the [SAlphaIotPresets.max_interval_to_persist_session_ms] then [total_running_time] should reset to 0
+            if time_diff.num_milliseconds() >= salpha_presets.max_interval_to_persist_session_ms {
+                return Duration::zero();
+            }
+
+            // else increment the time diff to the current [total_running_time] and return
+            self.total_running_time + time_diff
+        })();
+
+        IotDevicesActivityTime { total_running_time }
     }
 }
 
@@ -147,15 +230,17 @@ pub struct IotDeviceActivityDataUnit {
     pub tz: chrono_tz::Tz,
     pub device_data: IotDevice,
     pub device_id: String,
+    pub device_type: IotDeviceType,
 }
 
 impl IotDeviceActivityDataUnit {
-    pub fn new(device_id: &str, device_data: &IotDevice) -> Self {
+    pub fn new(device_id: &str, device_type: IotDeviceType, device_data: &IotDevice) -> Self {
         Self {
             time: get_time_now_default_tz(),
             tz: DefaultValues::DEFAULT_TIMEZONE,
             device_data: device_data.clone(),
             device_id: device_id.to_owned(),
+            device_type,
         }
     }
 }

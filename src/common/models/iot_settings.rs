@@ -33,5 +33,5 @@ pub struct SAlphaIotPresets {
 
     // the maximum intervals allowed between iot activities to tag it as a single session
     // this is useful in judging whether the iot is still in session in case of a power failure or other unknown reasons.
-    pub max_interval_to_persist_session_ms: usize,
+    pub max_interval_to_persist_session_ms: i64,
 }
