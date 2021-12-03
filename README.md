@@ -18,12 +18,12 @@ sirius-proxima | IOT RaspberryPI Mothership Module [rust]
 
 ```shell
 # to watch
-$ CHRONO_TZ_TIMEZONE_FILTER="(Asia/Kolkata|UTC)" cargo watch -x 'run --bin sirius-proxima'
+$ cargo watch -x 'run --bin sirius-proxima'
 
 # to run 
-$ CHRONO_TZ_TIMEZONE_FILTER="(Asia/Kolkata|UTC)" cargo run
+$ cargo run
 
 # to build 
-$ CHRONO_TZ_TIMEZONE_FILTER="(Asia/Kolkata|UTC)" cargo build --release
+$ cargo build --release
 
 ```

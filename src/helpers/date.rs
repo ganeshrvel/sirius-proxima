@@ -23,7 +23,7 @@ pub fn utc_to_default_tz(date: DateTime<Utc>) -> DateTime<Tz> {
     date.with_timezone(&tz)
 }
 
-pub fn get_time_now_default_tz() -> DateTime<Tz> {
+pub fn get_time_now_for_default_tz() -> DateTime<Tz> {
     let time_now = chrono::Utc::now();
 
     utc_to_default_tz(time_now)

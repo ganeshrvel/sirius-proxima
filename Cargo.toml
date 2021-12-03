@@ -32,7 +32,7 @@ anyhow = "1.0.44"
 thiserror = "1.0.30"
 
 chrono = "0.4.19"
-chrono-tz = { version = "0.6.0", features = [ "filter-by-regex" ] }
+chrono-tz = { version = "0.6.0", git = "https://github.com/ganeshrvel/chrono-tz", branch = "utc+0530" }
 
 #min-max = "^0.1.8"
 

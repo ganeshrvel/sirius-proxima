@@ -64,8 +64,7 @@ impl SAlphaPingResponse {
             //      the time_diff should be between now and the last beep
             // todo keep a state session for [short_period_buzzer_beep_duration_ms]
             if let Some(activity) = iot_device_activity.data_storage.first() {
-                let time_diff =
-                    iot_device_activity.last_activity_time.clone() - activity.time.clone();
+                let time_diff = iot_device_activity.last_activity_time - activity.time;
 
                 if time_diff.num_milliseconds()
                     >= salpha_presets.interval_between_beeps_to_start_short_period_buzzer_ms

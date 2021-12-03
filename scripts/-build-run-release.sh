@@ -8,5 +8,5 @@ cd ../
 
 ./scripts/-resets.sh
 
-CHRONO_TZ_TIMEZONE_FILTER="(Asia/Kolkata|UTC)" /home/pi/.cargo/bin/cargo build --release
+/home/pi/.cargo/bin/cargo build --release
 ./target/release/proxima

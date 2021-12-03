@@ -8,4 +8,4 @@ cd ../
 
 ./scripts/-resets.sh
 
-CHRONO_TZ_TIMEZONE_FILTER="(Asia/Kolkata|UTC)" /home/pi/.cargo/bin/cargo run
+/home/pi/.cargo/bin/cargo run

@@ -2,7 +2,7 @@ use crate::common::models::data::SharedAppData;
 use crate::common::models::iot_devices::{IotDevice, IotDeviceType};
 use crate::common::models::iot_settings::{IotSettings, SAlphaIotPresets};
 use crate::constants::default_values::DefaultValues;
-use crate::helpers::date::get_time_now_default_tz;
+use crate::helpers::date::get_time_now_for_default_tz;
 use crate::push_to_last_and_maintain_capacity_of_vector;
 use crate::utils::math::max_of;
 use actix_web::web;
@@ -25,7 +25,7 @@ impl AppState {
     pub fn new() -> Self {
         Self {
             iot_devices_state: IotDevicesState::new(),
-            launch_time: get_time_now_default_tz(),
+            launch_time: get_time_now_for_default_tz(),
             launch_time_tz: DefaultValues::DEFAULT_TIMEZONE,
         }
     }
@@ -84,6 +84,7 @@ pub struct IotDevicesActivityContainer {
     pub last_activity_time: DateTime<chrono_tz::Tz>,
     pub last_activity_tz: chrono_tz::Tz,
     pub total_running_time: chrono::Duration,
+    pub device_states: IotDeviceAppState,
 }
 
 struct IotDevicesActivityTime {
@@ -105,6 +106,7 @@ impl IotDevicesActivityContainer {
             last_activity_time,
             last_activity_tz,
             total_running_time: chrono::Duration::zero(),
+            device_states: IotDeviceAppState::default(device_type),
         }
     }
 
@@ -150,14 +152,10 @@ impl IotDevicesActivityContainer {
             current_iot_device_activity_container_data_storage.push(next_device_activity_data_unit);
         }
 
-        // we are cloning multiple items here to assist the intellij statical analysus since `chrono_tz` crate builds source file which is more than 8MB and the code insights will be turn off for the generated file.
         let last_activity_tz = next_device_activity_data_unit_clone.tz;
-        let last_activity_time: DateTime<chrono_tz::Tz>;
-        #[allow(clippy::redundant_clone)]
-        {
-            last_activity_time = next_device_activity_data_unit_clone.time.clone();
-        }
+        let last_activity_time = next_device_activity_data_unit_clone.time;
 
+        let device_states = self.device_states.clone();
         let IotDevicesActivityTime { total_running_time } = self.fetch_fetch_activity_time(
             &next_device_activity_data_unit_clone,
             device_type,
@@ -171,6 +169,7 @@ impl IotDevicesActivityContainer {
             device_type,
             last_activity_tz,
             device_id: device_id.to_owned(),
+            device_states,
         }
     }
 
@@ -201,12 +200,7 @@ impl IotDevicesActivityContainer {
         next_device_activity_data_unit: &IotDeviceActivityDataUnit,
         salpha_presets: &SAlphaIotPresets,
     ) -> IotDevicesActivityTime {
-        // we are cloning multiple items here to assist the intellij statical analysus since `chrono_tz` crate builds source file which is more than 8MB and the code insights will be turn off for the generated file.
-        let next_device_activity_time: DateTime<chrono_tz::Tz>;
-        #[allow(clippy::redundant_clone)]
-        {
-            next_device_activity_time = next_device_activity_data_unit.time.clone();
-        }
+        let next_device_activity_time = next_device_activity_data_unit.time;
 
         let total_running_time: Duration = (|| {
             let time_diff: Duration = next_device_activity_time - self.last_activity_time;
@@ -236,11 +230,63 @@ pub struct IotDeviceActivityDataUnit {
 impl IotDeviceActivityDataUnit {
     pub fn new(device_id: &str, device_type: IotDeviceType, device_data: &IotDevice) -> Self {
         Self {
-            time: get_time_now_default_tz(),
+            time: get_time_now_for_default_tz(),
             tz: DefaultValues::DEFAULT_TIMEZONE,
             device_data: device_data.clone(),
             device_id: device_id.to_owned(),
             device_type,
         }
+    }
+}
+
+// Stores the states of the IOT devices
+#[derive(Debug, Clone)]
+pub enum IotDeviceAppState {
+    RoofWaterHeater(SAlphaAppState),
+
+    BoreWellMotor(SAlphaAppState),
+
+    GroundWellMotor(SAlphaAppState),
+}
+
+impl IotDeviceAppState {
+    pub const fn default(device_type: IotDeviceType) -> Self {
+        match device_type {
+            IotDeviceType::RoofWaterHeater => {
+                Self::RoofWaterHeater(SAlphaAppState::default())
+            }
+
+            IotDeviceType::BoreWellMotor => {
+                Self::BoreWellMotor(SAlphaAppState::default())
+            }
+            IotDeviceType::GroundWellMotor => {
+                Self::GroundWellMotor(SAlphaAppState::default())
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct SAlphaAppState {
+    pub last_short_period_buzzer_activity_time: Option<DateTime<chrono_tz::Tz>>,
+    pub last_short_period_buzzer_activity_tz: chrono_tz::Tz,
+    pub last_continuous_period_buzzer_activity_time: Option<DateTime<chrono_tz::Tz>>,
+    pub last_continuous_short_period_buzzer_activity_tz: chrono_tz::Tz,
+}
+
+impl SAlphaAppState {
+    pub const fn default() -> Self {
+        Self {
+            last_short_period_buzzer_activity_time: None,
+            last_short_period_buzzer_activity_tz: DefaultValues::DEFAULT_TIMEZONE,
+            last_continuous_period_buzzer_activity_time: None,
+            last_continuous_short_period_buzzer_activity_tz: DefaultValues::DEFAULT_TIMEZONE,
+        }
+    }
+
+    pub fn _update_short_period_buzzer_activity_time(&mut self) -> &Self {
+        self.last_short_period_buzzer_activity_time = Some(get_time_now_for_default_tz());
+
+        self
     }
 }
