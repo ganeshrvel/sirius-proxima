@@ -7,6 +7,7 @@ use crate::push_to_last_and_maintain_capacity_of_vector;
 use crate::utils::math::max_of;
 use actix_web::web;
 use chrono::{DateTime, Duration};
+use std::cell::Cell;
 use std::collections::HashMap;
 use std::num::Wrapping;
 use std::sync::Mutex;
@@ -252,40 +253,54 @@ pub enum IotDeviceAppState {
 impl IotDeviceAppState {
     pub const fn default(device_type: IotDeviceType) -> Self {
         match device_type {
-            IotDeviceType::RoofWaterHeater => {
-                Self::RoofWaterHeater(SAlphaAppState::default())
-            }
+            IotDeviceType::RoofWaterHeater => Self::RoofWaterHeater(SAlphaAppState::default()),
 
-            IotDeviceType::BoreWellMotor => {
-                Self::BoreWellMotor(SAlphaAppState::default())
-            }
-            IotDeviceType::GroundWellMotor => {
-                Self::GroundWellMotor(SAlphaAppState::default())
-            }
+            IotDeviceType::BoreWellMotor => Self::BoreWellMotor(SAlphaAppState::default()),
+            IotDeviceType::GroundWellMotor => Self::GroundWellMotor(SAlphaAppState::default()),
         }
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct SAlphaAppState {
-    pub last_short_period_buzzer_activity_time: Option<DateTime<chrono_tz::Tz>>,
+    pub last_short_period_buzzer_activity_time: Cell<Option<DateTime<chrono_tz::Tz>>>,
     pub last_short_period_buzzer_activity_tz: chrono_tz::Tz,
-    pub last_continuous_period_buzzer_activity_time: Option<DateTime<chrono_tz::Tz>>,
+    pub last_continuous_period_buzzer_activity_time: Cell<Option<DateTime<chrono_tz::Tz>>>,
     pub last_continuous_short_period_buzzer_activity_tz: chrono_tz::Tz,
 }
 
 impl SAlphaAppState {
     pub const fn default() -> Self {
         Self {
-            last_short_period_buzzer_activity_time: None,
+            last_short_period_buzzer_activity_time: Cell::new(None),
             last_short_period_buzzer_activity_tz: DefaultValues::DEFAULT_TIMEZONE,
-            last_continuous_period_buzzer_activity_time: None,
+            last_continuous_period_buzzer_activity_time: Cell::new(None),
             last_continuous_short_period_buzzer_activity_tz: DefaultValues::DEFAULT_TIMEZONE,
         }
     }
 
-    pub fn _update_short_period_buzzer_activity_time(&mut self) -> &Self {
-        self.last_short_period_buzzer_activity_time = Some(get_time_now_for_default_tz());
+    pub fn update_short_period_buzzer_activity_time(&self) -> &Self {
+        self.last_short_period_buzzer_activity_time
+            .set(Some(get_time_now_for_default_tz()));
+
+        self
+    }
+
+    pub fn update_continuous_period_buzzer_activity_time(&self) -> &Self {
+        self.last_continuous_period_buzzer_activity_time
+            .set(Some(get_time_now_for_default_tz()));
+
+        self
+    }
+
+    pub fn reset_short_period_buzzer_activity_time(&self) -> &Self {
+        self.last_short_period_buzzer_activity_time.set(None);
+
+        self
+    }
+
+    pub fn reset_continuous_period_buzzer_activity_time(&self) -> &Self {
+        self.last_continuous_period_buzzer_activity_time.set(None);
 
         self
     }

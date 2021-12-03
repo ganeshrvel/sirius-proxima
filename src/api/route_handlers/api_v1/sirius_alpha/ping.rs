@@ -6,7 +6,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::common::models::iot_devices::{IotDevice, IotDeviceType};
 use crate::common::models::iot_settings::{IotSettings, SAlphaIotPresets};
-use crate::common::states::app_state::{IotDevicesActivityContainer, SharedAppState};
+use crate::common::states::app_state::{
+    IotDeviceAppState, IotDevicesActivityContainer, SAlphaAppState, SharedAppState,
+};
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct SAlphaPingRequest {
@@ -34,50 +36,99 @@ impl SAlphaPingResponse {
         device_type: IotDeviceType,
         iot_settings: &IotSettings,
     ) -> Self {
+        let device_states = &iot_device_activity.device_states;
+        let salpha_app_state: &SAlphaAppState;
+        match device_states {
+            IotDeviceAppState::RoofWaterHeater(d)
+            | IotDeviceAppState::BoreWellMotor(d)
+            | IotDeviceAppState::GroundWellMotor(d) => {
+                salpha_app_state = d;
+            }
+        }
+
         match device_type {
             IotDeviceType::RoofWaterHeater => Self::fetch_response_per_device(
                 iot_device_activity,
                 &iot_settings.settings.presets.roof_water_heater,
+                salpha_app_state,
             ),
             IotDeviceType::BoreWellMotor => Self::fetch_response_per_device(
                 iot_device_activity,
                 &iot_settings.settings.presets.bore_well_motor,
+                salpha_app_state,
             ),
             IotDeviceType::GroundWellMotor => Self::fetch_response_per_device(
                 iot_device_activity,
                 &iot_settings.settings.presets.ground_well_motor,
+                salpha_app_state,
             ),
         }
     }
 
+    // fetch the response for the `sirius alpha IOT` device
     fn fetch_response_per_device(
         iot_device_activity: &IotDevicesActivityContainer,
         salpha_presets: &SAlphaIotPresets,
+        salpha_app_state: &SAlphaAppState,
     ) -> Self {
-        let is_continuous_period_buzzer_beep_active =
+        let mut short_period_buzzer_beep_duration_ms: usize = 0;
+
+        // if the [total_running_time] is zero (not started yet) then reset the [last_short_period_buzzer_activity_time] and [start_continuous_period_buzzer_beep_after_ms]
+        if iot_device_activity.total_running_time.is_zero() {
+            salpha_app_state.reset_continuous_period_buzzer_activity_time();
+            salpha_app_state.reset_short_period_buzzer_activity_time();
+        }
+        // if the [total_running_time] of the iot device is not zero (the `sirius alpha IOT` device is active)
+        else {
+            let should_activate_short_period_buzzer: bool;
+            let last_short_period_buzzer_activity_time_cell = salpha_app_state
+                .last_short_period_buzzer_activity_time
+                .get();
+
+            // if the `sirius alpha IOT` device has already been activated (beeped) before, we use the time difference between the [last_activity_time] and [last_short_period_buzzer_activity_time] to check if the beep can be activated now again or not
+            if let Some(last_short_period_buzzer_activity_time) =
+                last_short_period_buzzer_activity_time_cell
+            {
+                // time difference between the [last_activity_time] and [last_short_period_buzzer_activity_time]
+                let time_diff =
+                    iot_device_activity.last_activity_time - last_short_period_buzzer_activity_time;
+
+                // if the `time difference` is greater than the [interval_between_beeps_to_start_short_period_buzzer_ms] value in the salpha presets then we activate the buzzer
+                should_activate_short_period_buzzer = time_diff.num_milliseconds()
+                    >= salpha_presets.interval_between_beeps_to_start_short_period_buzzer_ms;
+            }
+            // if the `sirius alpha IOT` device has never been activated (beeped) before
+            // and if the [total_running_time] is greater than the [interval_between_beeps_to_start_short_period_buzzer_ms] value in the salpha presets then we activate the buzzer
+            else {
+                should_activate_short_period_buzzer =
+                    iot_device_activity.total_running_time.num_milliseconds()
+                        >= salpha_presets.interval_between_beeps_to_start_short_period_buzzer_ms;
+            }
+
+            // if [should_activate_short_period_buzzer] is true then we start the shor period buzzer to beep [short_period_buzzer_beep_duration_ms] duration.
+            // else if [should_activate_short_period_buzzer] is false then we do not update the [last_short_period_buzzer_activity_time] and in the next api request cycle the [should_activate_short_period_buzzer] will be false if the time difference isnt met
+            if should_activate_short_period_buzzer {
+                short_period_buzzer_beep_duration_ms =
+                    salpha_presets.short_period_buzzer_beep_duration_ms;
+
+                // update the [last_short_period_buzzer_activity_time] to now();
+                salpha_app_state.update_short_period_buzzer_activity_time();
+            }
+        }
+
+        // should or not to activate the continuous period buzzer
+        let should_continuous_period_buzzer_beep =
             iot_device_activity.total_running_time.num_milliseconds()
                 >= salpha_presets.start_continuous_period_buzzer_beep_after_ms;
 
-        let mut short_period_buzzer_beep_duration_ms: usize = 0;
-        if !iot_device_activity.total_running_time.is_zero() {
-            // todo after the session reset, the short_period_buzzer_beep_duration_ms goes back to 7000 in 2 attempts.
-            //      the time_diff should be between now and the last beep
-            // todo keep a state session for [short_period_buzzer_beep_duration_ms]
-            if let Some(activity) = iot_device_activity.data_storage.first() {
-                let time_diff = iot_device_activity.last_activity_time - activity.time;
-
-                if time_diff.num_milliseconds()
-                    >= salpha_presets.interval_between_beeps_to_start_short_period_buzzer_ms
-                {
-                    short_period_buzzer_beep_duration_ms =
-                        salpha_presets.short_period_buzzer_beep_duration_ms;
-                }
-            }
+        if should_continuous_period_buzzer_beep {
+            // update continuous period buzzer activity time to now();
+            salpha_app_state.update_continuous_period_buzzer_activity_time();
         }
 
         Self {
             short_period_buzzer_beep_duration_ms,
-            is_continuous_period_buzzer_beep_active,
+            is_continuous_period_buzzer_beep_active: should_continuous_period_buzzer_beep,
         }
     }
 }
@@ -124,7 +175,6 @@ pub async fn salpha_ping(
         .get(device_id)
         .unwrap();
 
-    //println!("{:?}", app_state_data_ok);
     //  println!("{:?}", shared_app_data.config.iot_settings.settings.presets.bore_well_motor.);
 
     //todo :
@@ -132,6 +182,8 @@ pub async fn salpha_ping(
     //
 
     let res = SAlphaPingResponse::new(iot_device_activity, device_type, iot_settings);
+
+   // println!("{:?}", app_state_data_ok);
 
     /*{
         short_period_buzzer_beep_duration_ms: 7,
