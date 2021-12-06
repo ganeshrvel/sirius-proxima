@@ -114,8 +114,8 @@ async fn run() -> anyhow::Result<()> {
                 actix_middleware::TrailingSlash::Trim,
             ))
             .wrap(get_identity_service(
-                cookie_secret.clone(),
-                domain.clone(),
+                cookie_secret.as_str(),
+                domain.as_str(),
                 cookie_max_age_secs,
             ))
             .service(api::api_scope(&server))
