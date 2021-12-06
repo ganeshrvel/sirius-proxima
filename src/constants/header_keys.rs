@@ -1,4 +1,3 @@
-use crate::constants::app_env::AppEnv;
 use std::marker::PhantomData;
 
 #[non_exhaustive]
@@ -13,4 +12,5 @@ pub struct HeaderKeys<'a> {
 impl HeaderKeys<'static> {
     pub const DEVICE_ID: &'static str = "x-device-id";
     pub const CONTENT_TYPE: &'static str = "Content-Type";
+    pub const PERMISSIONS_POLICY: &'static str = "Permissions-Policy";
 }

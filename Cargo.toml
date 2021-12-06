@@ -24,6 +24,8 @@ serde_json = "1.0.68"
 serde_yaml = "0.8.21"
 serde-value = "0.7.0"
 
+local-ip-address = "0.4.4"
+
 lazy_static = "1.4.0"
 
 fern = { version = "0.6.0", features = ["colored"] }

@@ -6,14 +6,16 @@ settings:
   #### Server connection
   server:
 
-    #### (String) Server IP
-    ip: 127.0.0.1
+    #### (Option<String>) Server IP
+    # Leave the field empty to auto resolve the ip address
+    ip: #127.0.0.1
 
     #### (u32) Server port
-    port: 5050
+    port: 8080
 
-    #### (String) Domain name
-    domain: http://127.0.0.1
+    #### (Option<String>) Domain name
+    # Leave the field empty to auto resolve the ip address
+    domain: #http://127.0.0.1
 
     #### (String) Cookie secret `openssl rand -base64 128`
     cookie_secret: XXXXXXXXXXXXXXX

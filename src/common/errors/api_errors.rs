@@ -9,7 +9,7 @@ use std::sync::{MutexGuard, TryLockError};
 pub enum ApiErrors {
     MutexGuard(String),
 
-    Http(StatusCode, String),
+    _Http(StatusCode, String),
 
     InternalServerError(String),
 
@@ -22,7 +22,7 @@ impl ApiErrors {
             Self::MutexGuard(e) => format!(r"A Mutex Guard error occured: {:?}", e),
             Self::InternalServerError(e) => format!(r"An Internal Server Error occured: {:?}", e),
             Self::BadRequest(e) => format!(r"A Bad Request Error occured: {:?}", e),
-            Self::Http(status_code, e) => {
+            Self::_Http(status_code, e) => {
                 format!(r"A HTTP error occured: {:?} | {:?}", status_code, e)
             }
         }
@@ -40,22 +40,22 @@ impl ResponseError for ApiErrors {
         let message = self.message();
 
         match self {
-            ApiErrors::MutexGuard(e) => {
+            ApiErrors::MutexGuard(_e) => {
                 log::error!(r"[ErrorResponse] [MutexGuardError]: {:?}", message,);
 
                 http_error_resp(StatusCode::INTERNAL_SERVER_ERROR, Option::Some(&*message))
             }
-            ApiErrors::InternalServerError(e) => {
+            ApiErrors::InternalServerError(_e) => {
                 log::error!(r"[ErrorResponse] [InternalServerError]: {:?}", message,);
 
                 http_error_resp(StatusCode::INTERNAL_SERVER_ERROR, Option::Some(&*message))
             }
-            ApiErrors::BadRequest(e) => {
+            ApiErrors::BadRequest(_e) => {
                 log::error!(r"[ErrorResponse] [BadRequest]: {:?}", message,);
 
                 http_error_resp(StatusCode::BAD_REQUEST, Option::Some(&*message))
             }
-            ApiErrors::Http(status_code, e) => {
+            ApiErrors::_Http(status_code, _e) => {
                 log::error!(r"[ErrorResponse] [HttpError]: {:?}", message,);
 
                 http_error_resp(*status_code, Option::Some(&*message))

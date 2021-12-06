@@ -37,6 +37,7 @@ use crate::common::models::data::AppData;
 use crate::common::states::app_state::AppState;
 use crate::constants::app_env::AppEnv;
 use crate::constants::default_values::DefaultValues;
+use crate::constants::header_keys::HeaderKeys;
 use crate::constants::strings::Strings;
 use crate::helpers::actix::actix_helpers::{get_identity_service, get_json_err};
 use crate::helpers::sanitizers::sanitize_constants;
@@ -92,13 +93,13 @@ async fn run() -> anyhow::Result<()> {
         .app_settings
         .settings
         .server
-        .get_uri(true);
+        .get_uri(true)?;
     let server_url_without_protocol = shared_app_data
         .config
         .app_settings
         .settings
         .server
-        .get_uri(false);
+        .get_uri(false)?;
     let cookie_secret = shared_app_data
         .config
         .app_settings
@@ -111,8 +112,7 @@ async fn run() -> anyhow::Result<()> {
         .app_settings
         .settings
         .server
-        .domain
-        .clone();
+        .get_domain()?;
     let cookie_max_age_secs = shared_app_data
         .config
         .app_settings
@@ -131,7 +131,7 @@ async fn run() -> anyhow::Result<()> {
             .wrap(actix_middleware::Logger::default())
             .wrap(
                 actix_middleware::DefaultHeaders::new()
-                    .header("Permissions-Policy", "interest-cohort=()"),
+                    .header(HeaderKeys::PERMISSIONS_POLICY, "interest-cohort=()"),
             )
             .wrap(actix_middleware::Compress::default())
             .wrap(actix_middleware::NormalizePath::new(

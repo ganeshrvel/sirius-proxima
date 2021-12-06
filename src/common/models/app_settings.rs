@@ -1,3 +1,4 @@
+use local_ip_address::local_ip;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -12,10 +13,6 @@ pub struct SettingsEntity {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Server {
-    pub port: u32,
-
-    pub domain: String,
-
     pub cookie_secret: String,
 
     pub cookie_max_age_secs: i64,
@@ -24,21 +21,48 @@ pub struct Server {
 
     pub api_secret_token: String,
 
-    pub ip: String,
+    pub ip: Option<String>,
+
+    pub port: u32,
+
+    pub domain: Option<String>,
+
     pub https: bool,
 }
 
 impl Server {
-    pub fn get_uri(&self, prefix_protocol: bool) -> String {
-        if !prefix_protocol {
-            return format!("{}:{}", self.ip, self.port);
+    pub fn get_domain(&self) -> anyhow::Result<String> {
+        if let Some(domain) = &self.domain {
+            return Ok(domain.to_owned());
         }
 
-        format!(
+        let resolved_domain = self.get_uri(true)?;
+
+        Ok(resolved_domain)
+    }
+
+    pub fn get_ip(&self) -> anyhow::Result<String> {
+        if let Some(ip) = &self.ip {
+            return Ok(ip.to_owned());
+        }
+
+        let the_local_ip = local_ip()?;
+
+        Ok(the_local_ip.to_string())
+    }
+
+    pub fn get_uri(&self, prefix_protocol: bool) -> anyhow::Result<String> {
+        let ip = self.get_ip()?;
+
+        if !prefix_protocol {
+            return Ok(format!("{}:{}", ip, self.port));
+        }
+
+        Ok(format!(
             "{}://{}:{}",
             if self.https { "https" } else { "http" },
-            self.ip,
+            ip,
             self.port
-        )
+        ))
     }
 }
