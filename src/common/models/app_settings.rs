@@ -28,12 +28,14 @@ pub struct Server {
     pub domain: Option<String>,
 
     pub https: bool,
+
+    pub tls: Option<ServerTls>,
 }
 
 impl Server {
     pub fn get_domain(&self) -> anyhow::Result<String> {
         if let Some(domain) = &self.domain {
-            return Ok(domain.to_owned());
+            return Ok(domain.clone());
         }
 
         let resolved_domain = self.get_uri(true)?;
@@ -43,7 +45,7 @@ impl Server {
 
     pub fn get_ip(&self) -> anyhow::Result<String> {
         if let Some(ip) = &self.ip {
-            return Ok(ip.to_owned());
+            return Ok(ip.clone());
         }
 
         let the_local_ip = local_ip()?;
@@ -65,4 +67,12 @@ impl Server {
             self.port
         ))
     }
+}
+
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ServerTls {
+    pub tls_key_file: String,
+
+    pub tls_cert_file: String
 }

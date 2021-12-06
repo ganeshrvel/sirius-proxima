@@ -12,6 +12,22 @@ sirius-proxima | IOT RaspberryPI Mothership Module [rust]
 - Ref: https://stackoverflow.com/a/23058324/1317099
 - Goto Help menu, Edit Custom Properties > Add > `idea.max.intellisense.filesize=10000`
 
+**Install TLS/HTTPS**
+- Ref: https://github.com/FiloSottile/mkcert
+- Ref: https://github.com/actix/examples/tree/master/security/rustls/
+
+```shell
+# macos
+$ brew install mkcert
+$ brew install nss 
+
+# this will install a trusted developer's certificate for the local use
+$ mkcert -install
+
+# replace the `<xxx.xxx.x.xx>` with your ip addresses
+$ mkcert -key-file /path/key.pem -cert-file /path/cert.pem 127.0.0.1 <xxx.xxx.x.xx> <xxx.xxx.x.xx>
+```
+
 ### Run
 
 - Note: Modify the `CHRONO_TZ_TIMEZONE_FILTER` env variable according to your TZ choice. This is done to treeshake the `chrono_tz` crate.
@@ -27,3 +43,5 @@ $ cargo run
 $ cargo build --release
 
 ```
+
+

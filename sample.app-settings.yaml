@@ -23,11 +23,19 @@ settings:
     #### (i64) max age of the cookie
     cookie_max_age_secs: 216000
 
-    # (String) api secret token `openssl rand -base64 64`
+    #### (String) api secret token `openssl rand -base64 64`
     api_secret_token: XXXXXXXXXXXXXXX
 
-    # (String) API secret token key which has to be passed via API header
+    #### (String) API secret token key which has to be passed via API header
     api_secret_key: "API_TOKEN_XXX"
 
     #### (bool) http available
     https: false
+
+    #### (Option<ServerTls>) TLS/HTTPS data
+    tls:
+      #### (String) Key file
+      tls_key_file: /path/key.pem
+      
+      #### (String) Cert file
+      tls_cert_file: /path/cert.pem
