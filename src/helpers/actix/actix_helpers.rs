@@ -17,13 +17,14 @@ pub fn get_identity_service(
     cookie_secret: &str,
     domain: &str,
     cookie_max_age_secs: i64,
+    secure: bool,
 ) -> IdentityService<CookieIdentityPolicy> {
     IdentityService::new(
         CookieIdentityPolicy::new(cookie_secret.as_bytes())
             .name(HeaderKeys::AUTHORIZATION)
             .max_age_secs(cookie_max_age_secs)
             .domain(domain)
-            .secure(false),
+            .secure(secure),
     )
 }
 

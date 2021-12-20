@@ -121,6 +121,7 @@ async fn run() -> anyhow::Result<()> {
                 cookie_secret.as_str(),
                 domain.as_str(),
                 cookie_max_age_secs,
+                enable_https,
             ))
             .service(api::api_scope(&server))
             .app_data(shared_app_data.clone())
