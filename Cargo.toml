@@ -11,16 +11,19 @@ publish = false
 [dependencies]
 # rust_gpiozero = "0.2.1"
 
-actix-web = { version = "4.0.0-beta.13", features = ["rustls"] }
-actix = "0.12.0"
-actix-identity = "0.4.0-beta.4"
-actix-http = "3.0.0-beta.14"
-actix-rt = "2.5.0"
-actix-cors = "0.6.0-beta.4"
-actix-service = "2.0.1"
 
-rustls = "0.20.2"
-rustls-pemfile = "0.2.1"
+actix-web = { version = "4.0.0-beta.15", features = ["openssl", "default"] }
+actix = "0.12.0"
+actix-identity = "0.4.0-beta.6"
+actix-http = "3.0.0-beta.16"
+actix-rt = "2.5.0"
+actix-cors = "0.6.0-beta.7"
+actix-service = "2.0.2"
+
+openssl = "0.10"
+
+#tracing-actix-web = "0.5.0-beta.6"
+#tracing = "0.1.29"
 
 serde = { version = "1.0.130", features = ["derive"] }
 serde_json = "1.0.72"

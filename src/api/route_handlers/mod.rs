@@ -3,6 +3,7 @@ use crate::api::route_handlers::api_v1::sirius_alpha::sirius_alpha_scope;
 use crate::common::models::app_settings::Server;
 use actix_web::web::ServiceConfig;
 use actix_web::{guard, web, Scope};
+use crate::HeaderKeys;
 
 pub mod api_root;
 pub mod api_v1;
@@ -23,7 +24,7 @@ pub fn api_v1_scope(server: &Server) -> Scope {
             }
         }))
         .guard(guard::fn_guard(move |head| {
-            let header_value = head.headers.get("X-Device-id");
+            let header_value = head.headers.get(HeaderKeys::DEVICE_ID);
 
             match header_value {
                 None => false,

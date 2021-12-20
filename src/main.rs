@@ -27,9 +27,10 @@ mod utils;
 
 use std::env;
 
-use actix_web::{middleware as actix_middleware, web, App, HttpServer};
+use actix_web::{middleware as actix_middleware, middleware, web, App, HttpServer};
 use api::helpers::responses::not_found;
 
+use actix_http::ContentEncoding;
 use std::sync::Mutex;
 
 use crate::common::errors::setup_errors::SetupError;
@@ -41,7 +42,7 @@ use crate::constants::default_values::DefaultValues;
 use crate::constants::header_keys::HeaderKeys;
 use crate::constants::strings::Strings;
 use crate::helpers::actix::actix_helpers::{
-    get_identity_service, get_json_err, make_server_config,
+    get_identity_service, get_json_err, make_openssl_builder,
 };
 use crate::helpers::sanitizers::sanitize_constants;
 use crate::utils::logs::fern_log::setup_logging;
@@ -111,9 +112,9 @@ async fn run() -> anyhow::Result<()> {
             .wrap(actix_middleware::Logger::default())
             .wrap(
                 actix_middleware::DefaultHeaders::new()
-                    .header(HeaderKeys::PERMISSIONS_POLICY, "interest-cohort=()"),
+                    .add((HeaderKeys::PERMISSIONS_POLICY, "interest-cohort=()")),
             )
-            .wrap(actix_middleware::Compress::default())
+            .wrap(middleware::Compress::new(ContentEncoding::default()))
             .wrap(actix_middleware::NormalizePath::new(
                 actix_middleware::TrailingSlash::Trim,
             ))
@@ -134,10 +135,10 @@ async fn run() -> anyhow::Result<()> {
 
     if enable_https {
         if let Some(t) = tls {
-            let tls_cfg = make_server_config(&t)?;
+            let openssl_builder = make_openssl_builder(&t)?;
 
             http_server_binding =
-                http_server_base.bind_rustls(server_url_without_protocol, tls_cfg)?;
+                http_server_base.bind_openssl(server_url_without_protocol, openssl_builder)?;
         } else {
             http_server_binding = http_server_base.bind(server_url_without_protocol)?;
         }
