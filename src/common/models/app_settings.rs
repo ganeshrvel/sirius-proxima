@@ -27,7 +27,7 @@ pub struct Server {
 
     pub domain: Option<String>,
 
-    pub https: bool,
+    pub enable_tls: bool,
 
     pub tls: Option<ServerTls>,
 }
@@ -62,7 +62,7 @@ impl Server {
 
         Ok(format!(
             "{}://{}:{}",
-            if self.https { "https" } else { "http" },
+            if self.enable_tls { "https" } else { "http" },
             ip,
             self.port
         ))

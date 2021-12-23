@@ -29,13 +29,16 @@ settings:
     #### (String) API secret token key which has to be passed via API header
     api_secret_key: "API_TOKEN_XXX"
 
-    #### (bool) http available
-    https: false
+    #### (bool) enable content encoding (compression)
+    enable_content_compression: true
+
+    #### (bool) Enable TLS support
+    enable_tls: true
 
     #### (Option<ServerTls>) TLS/HTTPS data
     tls:
       #### (String) Key file
       tls_key_file: /path/key.pem
-      
+
       #### (String) Cert file
       tls_cert_file: /path/cert.pem

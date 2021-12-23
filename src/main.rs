@@ -30,7 +30,6 @@ use std::env;
 use actix_web::{middleware as actix_middleware, middleware, web, App, HttpServer};
 use api::helpers::responses::not_found;
 
-use actix_http::ContentEncoding;
 use std::sync::Mutex;
 
 use crate::common::errors::setup_errors::SetupError;
@@ -99,7 +98,7 @@ async fn run() -> anyhow::Result<()> {
     let cookie_secret = server.cookie_secret.clone();
     let domain = server.get_domain()?;
     let cookie_max_age_secs = server.cookie_max_age_secs;
-    let enable_https = server.https;
+    let enable_tls = server.enable_tls;
     let tls = server.tls.clone();
     log::info!("starting the server on: {}", server_url_with_protocol);
 
@@ -110,11 +109,11 @@ async fn run() -> anyhow::Result<()> {
     let http_server_base = HttpServer::new(move || {
         App::new()
             .wrap(actix_middleware::Logger::default())
+            .wrap(middleware::Compress::default())
             .wrap(
                 actix_middleware::DefaultHeaders::new()
                     .add((HeaderKeys::PERMISSIONS_POLICY, "interest-cohort=()")),
             )
-            .wrap(middleware::Compress::new(ContentEncoding::default()))
             .wrap(actix_middleware::NormalizePath::new(
                 actix_middleware::TrailingSlash::Trim,
             ))
@@ -122,7 +121,7 @@ async fn run() -> anyhow::Result<()> {
                 cookie_secret.as_str(),
                 domain.as_str(),
                 cookie_max_age_secs,
-                enable_https,
+                enable_tls,
             ))
             .service(api::api_scope(&server))
             .app_data(shared_app_data.clone())
@@ -133,7 +132,7 @@ async fn run() -> anyhow::Result<()> {
 
     let http_server_binding;
 
-    if enable_https {
+    if enable_tls {
         if let Some(t) = tls {
             let openssl_builder = make_openssl_builder(&t)?;
 
