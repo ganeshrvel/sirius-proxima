@@ -1,4 +1,13 @@
-sirius-proxima | IOT RaspberryPI Mothership Module [rust]
+# Sirius Proxima [WIP] | Mothership Module for RaspberryPi based IOTs
+
+- Author: [Ganesh Rathinavel](https://www.linkedin.com/in/ganeshrvel "Ganesh Rathinavel")
+- License: [MIT](https://github.com/ganeshrvel/sirius-proxima/blob/master/LICENSE "MIT")
+- Repo URL: [https://github.com/ganeshrvel/sirius-proxima](https://github.com/ganeshrvel/sirius-proxima/ "https://github.com/ganeshrvel/sirius-proxima")
+- Contacts: ganeshrvel@outlook.com
+
+# Introduction
+Sirius Proxima is a rust based program which I use to automate IOTs at my home and home-office. This is a work in progress. The source code for the satelite IOT modules is available here: [Siris Alpha](https://github.com/ganeshrvel/sirius-alpha, "Siris Alpha")
+
 
 ### Setup
 
@@ -45,3 +54,13 @@ $ cargo build --release
 ```
 
 
+### Contribute
+If you are interested in fixing issues and contributing directly to the code base.
+
+### Contacts
+Please feel free to contact me at ganeshrvel@outlook.com
+
+### License
+Sirius Proxima [WIP] | Mothership Module for RaspberryPi based IOTs is released under [MIT License](https://github.com/ganeshrvel/sirius-proxima/blob/master/LICENSE "MIT License").
+
+Copyright © 2018-Present Ganesh Rathinavel
