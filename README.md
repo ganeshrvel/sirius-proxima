@@ -6,7 +6,7 @@
 - Contacts: ganeshrvel@outlook.com
 
 # Introduction
-Sirius Proxima is a rust based program which I use to automate IOTs at my home and home-office. This is a work in progress. The source code for the satelite IOT modules is available here: [Siris Alpha](https://github.com/ganeshrvel/sirius-alpha, "Siris Alpha")
+Sirius Proxima is a rust based program that I use for automating IOTs at my home and home-office. This is a work in progress. The source code [rust] for the ESP32 based satellite IOT module is available here: [Siris Alpha](https://github.com/ganeshrvel/sirius-alpha, "Siris Alpha")
 
 
 ### Setup
