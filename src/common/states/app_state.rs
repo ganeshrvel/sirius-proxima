@@ -7,9 +7,11 @@ use crate::push_to_last_and_maintain_capacity_of_vector;
 use crate::utils::math::max_of;
 use actix_web::web;
 use chrono::{DateTime, Duration};
+use log::error;
 use std::cell::Cell;
 use std::collections::HashMap;
 use std::num::Wrapping;
+use std::ops::Add;
 use std::sync::Mutex;
 
 pub type IotDevicesActivityBucket = HashMap<String, IotDevicesActivityContainer>;
@@ -84,12 +86,12 @@ pub struct IotDevicesActivityContainer {
     pub device_id: String,
     pub last_activity_time: DateTime<chrono_tz::Tz>,
     pub last_activity_tz: chrono_tz::Tz,
-    pub total_running_time: chrono::Duration,
+    pub total_running_time: Duration,
     pub device_states: IotDeviceAppState,
 }
 
 struct IotDevicesActivityTime {
-    pub total_running_time: chrono::Duration,
+    pub total_running_time: Duration,
 }
 
 impl IotDevicesActivityContainer {
@@ -157,7 +159,7 @@ impl IotDevicesActivityContainer {
         let last_activity_time = next_device_activity_data_unit_clone.time;
 
         let device_states = self.device_states.clone();
-        let IotDevicesActivityTime { total_running_time } = self.fetch_fetch_activity_time(
+        let IotDevicesActivityTime { total_running_time } = self.fetch_activity_time(
             &next_device_activity_data_unit_clone,
             device_type,
             iot_settings,
@@ -174,29 +176,29 @@ impl IotDevicesActivityContainer {
         }
     }
 
-    fn fetch_fetch_activity_time(
+    fn fetch_activity_time(
         self,
         next_device_activity_data_unit: &IotDeviceActivityDataUnit,
         device_type: IotDeviceType,
         iot_settings: &IotSettings,
     ) -> IotDevicesActivityTime {
         match device_type {
-            IotDeviceType::RoofWaterHeater => self.fetch_fetch_activity_time_salpha(
+            IotDeviceType::RoofWaterHeater => self.fetch_total_activity_time_salpha(
                 next_device_activity_data_unit,
                 &iot_settings.settings.presets.roof_water_heater,
             ),
-            IotDeviceType::BoreWellMotor => self.fetch_fetch_activity_time_salpha(
+            IotDeviceType::BoreWellMotor => self.fetch_total_activity_time_salpha(
                 next_device_activity_data_unit,
                 &iot_settings.settings.presets.bore_well_motor,
             ),
-            IotDeviceType::GroundWellMotor => self.fetch_fetch_activity_time_salpha(
+            IotDeviceType::GroundWellMotor => self.fetch_total_activity_time_salpha(
                 next_device_activity_data_unit,
                 &iot_settings.settings.presets.ground_well_motor,
             ),
         }
     }
 
-    fn fetch_fetch_activity_time_salpha(
+    fn fetch_total_activity_time_salpha(
         self,
         next_device_activity_data_unit: &IotDeviceActivityDataUnit,
         salpha_presets: &SAlphaIotPresets,
@@ -205,10 +207,26 @@ impl IotDevicesActivityContainer {
 
         let total_running_time: Duration = (|| {
             let time_diff: Duration = next_device_activity_time - self.last_activity_time;
+            let time_diff_ms = time_diff.num_milliseconds();
 
             // if the time difference between the [next_device_activity_time] and the [last_activity_time] is eq.to or greater than the [SAlphaIotPresets.max_interval_to_persist_session_ms] then [total_running_time] should reset to 0
-            if time_diff.num_milliseconds() >= salpha_presets.max_interval_to_persist_session_ms {
+            if time_diff_ms >= salpha_presets.max_interval_to_persist_session_ms {
                 return Duration::zero();
+            }
+
+            // if the time difference between the [next_device_activity_time] and the [last_activity_time] is eq.to or greater than the [SAlphaIotPresets.pause_total_running_time_on_inactive_for_ms] then pause the activity after [salpha_presets.pause_total_running_time_on_inactive_for_ms] duration after the [last_activity_time]
+
+            // (  [last_activity_time] | <---[pause_total_running_time_on_inactive_for_ms]---> | <---[silent_activity_time_to_skip]---> | [next_device_activity_time] )
+            // (  <--- [last_activity_permitted_before_pausing]   -------------> | )
+            if time_diff_ms >= salpha_presets.pause_total_running_time_on_inactive_for_ms {
+                let last_activity_permitted_before_pausing = self.last_activity_time.add(
+                    Duration::milliseconds(salpha_presets.pause_total_running_time_on_inactive_for_ms),
+                );
+
+                let silent_activity_time_to_skip =
+                    next_device_activity_time - last_activity_permitted_before_pausing;
+
+                return self.total_running_time + time_diff - silent_activity_time_to_skip;
             }
 
             // else increment the time diff to the current [total_running_time] and return
@@ -254,7 +272,6 @@ impl IotDeviceAppState {
     pub const fn default(device_type: IotDeviceType) -> Self {
         match device_type {
             IotDeviceType::RoofWaterHeater => Self::RoofWaterHeater(SAlphaAppState::default()),
-
             IotDeviceType::BoreWellMotor => Self::BoreWellMotor(SAlphaAppState::default()),
             IotDeviceType::GroundWellMotor => Self::GroundWellMotor(SAlphaAppState::default()),
         }
