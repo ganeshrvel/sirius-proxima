@@ -149,7 +149,7 @@ pub async fn salpha_ping(
     let app_state_data = shared_app_state.try_lock();
     let mut app_state_data_ok = app_state_data.map_err(api_errors::map_mutex_guard_to_api_error)?;
 
-    let device_id = responses::get_http_header(base_request, header_keys::HeaderKeys::DEVICE_ID)?;
+    let device_id = responses::get_http_header(&base_request, header_keys::HeaderKeys::DEVICE_ID)?;
     let device_type = body_data.device_type;
     let iot_device = &body_data.device;
     let iot_settings = &shared_app_data.config.iot_settings;

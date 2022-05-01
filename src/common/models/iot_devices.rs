@@ -3,15 +3,15 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Deserialize, Clone, Eq, PartialEq, Hash)]
 #[serde(tag = "device_type", content = "details")]
 pub enum IotDevice {
-    // esp-8266 01 device
+    // esp-32 device
     #[serde(rename = "roof_water_heater")]
     RoofWaterHeater(SAlphaDeviceDetails),
 
-    // esp-8266 01 device
+    // esp-32 device
     #[serde(rename = "bore_well_motor")]
     BoreWellMotor(SAlphaDeviceDetails),
 
-    // esp-8266 01 device
+    // esp-32 device
     #[serde(rename = "ground_well_motor")]
     GroundWellMotor(SAlphaDeviceDetails),
 }
@@ -28,13 +28,13 @@ pub enum IotDeviceType {
     GroundWellMotor,
 }
 
-// SAlpha or sirius-alpha are the esp-8266 01 devices
+// SAlpha or sirius-alpha are the esp-32 devices
 #[derive(Debug, Deserialize, Clone, Eq, PartialEq, Hash)]
 pub struct SAlphaDeviceDetails {
     pub device_name: String,
     pub model: String,
     pub device_id: String,
     pub device_location: String,
-    pub device_sdk: String,
+    pub revision: u8,
     pub app_version: String,
 }

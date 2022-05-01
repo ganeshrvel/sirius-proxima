@@ -33,7 +33,6 @@ use api::helpers::responses::not_found;
 use std::sync::Mutex;
 
 use crate::common::errors::setup_errors::SetupError;
-use crate::common::models::api::NotFoundResponse;
 use crate::common::models::data::AppData;
 use crate::common::states::app_state::AppState;
 use crate::constants::app_env::AppEnv;
@@ -107,8 +106,10 @@ async fn run() -> anyhow::Result<()> {
     let shared_state = web::Data::new(Mutex::new(app_state));
 
     let http_server_base = HttpServer::new(move || {
+        let l = actix_middleware::Logger::new(r#"%a "%r" %s %b "%{Referer}i" "%{User-Agent}i" %T"#);
+
         App::new()
-            .wrap(actix_middleware::Logger::default())
+            .wrap(l)
             .wrap(middleware::Compress::default())
             .wrap(
                 actix_middleware::DefaultHeaders::new()

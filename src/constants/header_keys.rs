@@ -14,5 +14,5 @@ impl HeaderKeys<'static> {
     pub const CONTENT_TYPE: &'static str = "Content-Type";
     pub const PERMISSIONS_POLICY: &'static str = "Permissions-Policy";
     pub const AUTHORIZATION: &'static str = "Authorization";
-    pub const ACCEPT_ENCODING: &'static str = "Accept-Encoding";
+    pub const _ACCEPT_ENCODING: &'static str = "Accept-Encoding";
 }

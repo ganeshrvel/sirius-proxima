@@ -1,15 +1,16 @@
 use crate::common::errors::api_errors;
 use crate::common::errors::api_errors::map_to_internal_server_error;
 use crate::common::models::api::{ErrorResponse, SuccessResponse};
-use crate::NotFoundResponse;
+use crate::AppEnv;
 use actix_http::StatusCode;
 use actix_web::{HttpRequest, HttpResponse};
 
 pub fn not_found() -> HttpResponse {
-    HttpResponse::NotFound().json(NotFoundResponse {
+    HttpResponse::NotFound().json(ErrorResponse {
         status_code: StatusCode::NOT_FOUND.as_u16(),
         message: StatusCode::NOT_FOUND.canonical_reason(),
         success: StatusCode::NOT_FOUND.is_success(),
+        error: None,
     })
 }
 
@@ -36,16 +37,18 @@ pub fn http_error_resp(status_code: StatusCode, err: Option<&str>) -> HttpRespon
 }
 
 pub fn http_error_resp_gen(status_code: StatusCode, err: Option<&str>) -> ErrorResponse {
+    let error = if AppEnv::IS_DEBUG { err } else { None };
+
     ErrorResponse {
         status_code: status_code.as_u16(),
         message: status_code.canonical_reason(),
         success: status_code.is_success(),
-        error: err,
+        error,
     }
 }
 
 pub fn get_http_header(
-    base_request: HttpRequest,
+    base_request: &HttpRequest,
     key: &str,
 ) -> Result<String, api_errors::ApiErrors> {
     let header_value = base_request.head().headers.get(key);
@@ -57,9 +60,9 @@ pub fn get_http_header(
         ))
     })?;
 
-   let value = header_value_ok
+    let value = header_value_ok
         .to_str()
         .map_err(map_to_internal_server_error)?;
 
-   Ok(value.to_owned())
+    Ok(value.to_owned())
 }

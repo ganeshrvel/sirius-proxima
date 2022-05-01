@@ -65,7 +65,7 @@ impl ResponseError for ApiErrors {
 }
 
 pub fn map_mutex_guard_to_api_error<T>(e: TryLockError<MutexGuard<T>>) -> ApiErrors {
-    api_errors::ApiErrors::MutexGuard(e.to_string())
+    ApiErrors::MutexGuard(e.to_string())
 }
 
 pub fn map_to_internal_server_error<E>(e: E) -> ApiErrors

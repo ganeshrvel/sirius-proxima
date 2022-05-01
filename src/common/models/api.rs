@@ -5,13 +5,6 @@ pub struct Health {
     pub is_health_ok: bool,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
-pub struct NotFoundResponse<'a> {
-    pub status_code: u16,
-    pub message: Option<&'a str>,
-    pub success: bool,
-}
-
 #[derive(Debug, Serialize)]
 pub struct SuccessResponse<'a> {
     pub status_code: u16,
@@ -20,7 +13,7 @@ pub struct SuccessResponse<'a> {
     pub success: bool,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct ErrorResponse<'a> {
     pub status_code: u16,
     pub message: Option<&'a str>,
