@@ -27,6 +27,7 @@ pub struct SAlphaPingRequest {
 pub struct SAlphaPingResponse {
     pub short_period_buzzer_beep_duration_ms: usize,
     pub is_continuous_period_buzzer_beep_active: bool,
+    pub is_first_ping_after_device_turned_on_registered: bool,
 }
 
 impl SAlphaPingResponse {
@@ -134,6 +135,7 @@ impl SAlphaPingResponse {
         Self {
             short_period_buzzer_beep_duration_ms,
             is_continuous_period_buzzer_beep_active: should_continuous_period_buzzer_beep,
+            is_first_ping_after_device_turned_on_registered: false,
         }
     }
 }
@@ -177,7 +179,7 @@ pub async fn salpha_ping(
     let device_location = &iot_device_activity.device_location;
     let last_activity_time = &iot_device_activity.last_activity_time;
 
-    let res = SAlphaPingResponse::new(iot_device_activity, device_type, iot_settings);
+    let mut res = SAlphaPingResponse::new(iot_device_activity, device_type, iot_settings);
 
     // todo improve the notification logic, move this outside ping to a spawn of polling
     // if [is_first_ping_after_device_turned_on] is received as true from the incoming api request
@@ -188,7 +190,17 @@ pub async fn salpha_ping(
             .await;
         if let Err(e) = ping_res {
             error!("[E0001a] A notification error occured {:?}", e);
+        } else {
+            // set [is_first_ping_after_device_turned_on_registered] as true if the notification was successfully sent to the user
+            // this means that we are asking the IOT to stop sending [is_first_ping_after_device_turned_on] flag
+            // once the 'device turned on' notification is sent to the user
+            res.is_first_ping_after_device_turned_on_registered = true;
         }
+    } else {
+        // set [is_first_ping_after_device_turned_on_registered] as true if [is_first_ping_after_device_turned_on] is false
+        // this means we are asking the IOT to stop sending [is_first_ping_after_device_turned_on] flag
+        // once the 'device turned on' notification is sent to the user
+        res.is_first_ping_after_device_turned_on_registered = true;
     }
 
     // if [is_continuous_period_buzzer_beep_active] is true then check if we can
