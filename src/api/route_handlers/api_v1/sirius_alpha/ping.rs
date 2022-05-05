@@ -2,14 +2,16 @@ use crate::api::helpers::responses::success_resp;
 use crate::common::models::data::SharedAppData;
 use actix_web::web::Json;
 use actix_web::{put, HttpRequest, HttpResponse};
+use log::error;
 use serde::{Deserialize, Serialize};
 
 use crate::api::helpers::responses;
+use crate::api::route_handlers::api_v1::sirius_alpha::notifications::SharedPingNotifications;
 use crate::common::errors::api_errors;
 use crate::common::models::iot_devices::{IotDevice, IotDeviceType};
 use crate::common::models::iot_settings::{IotSettings, SAlphaIotPresets};
 use crate::common::states::app_state::{
-    IotDeviceAppState, IotDevicesActivityContainer, SAlphaAppState, SharedAppState,
+    IotDeviceActivityContainer, IotDeviceAppState, SAlphaAppState, SharedAppState,
 };
 use crate::constants::header_keys;
 
@@ -27,7 +29,7 @@ pub struct SAlphaPingResponse {
 
 impl SAlphaPingResponse {
     fn new(
-        iot_device_activity: &IotDevicesActivityContainer,
+        iot_device_activity: &IotDeviceActivityContainer,
         device_type: IotDeviceType,
         iot_settings: &IotSettings,
     ) -> Self {
@@ -35,21 +37,17 @@ impl SAlphaPingResponse {
     }
 
     fn fetch_response(
-        iot_device_activity: &IotDevicesActivityContainer,
+        iot_device_activity: &IotDeviceActivityContainer,
         device_type: IotDeviceType,
         iot_settings: &IotSettings,
     ) -> Self {
         let device_states = &iot_device_activity.device_states;
-        let salpha_app_state: &SAlphaAppState;
 
-        #[allow(clippy::pattern_type_mismatch)]
-        match device_states {
+        let salpha_app_state = match device_states {
             IotDeviceAppState::RoofWaterHeater(d)
             | IotDeviceAppState::BoreWellMotor(d)
-            | IotDeviceAppState::GroundWellMotor(d) => {
-                salpha_app_state = d;
-            }
-        }
+            | IotDeviceAppState::GroundWellMotor(d) => d,
+        };
 
         match device_type {
             IotDeviceType::RoofWaterHeater => Self::fetch_response_per_device(
@@ -72,7 +70,7 @@ impl SAlphaPingResponse {
 
     // fetch the response for the `sirius alpha IOT` device
     fn fetch_response_per_device(
-        iot_device_activity: &IotDevicesActivityContainer,
+        iot_device_activity: &IotDeviceActivityContainer,
         salpha_presets: &SAlphaIotPresets,
         salpha_app_state: &SAlphaAppState,
     ) -> Self {
@@ -143,6 +141,7 @@ impl SAlphaPingResponse {
 pub async fn salpha_ping(
     shared_app_state: SharedAppState,
     shared_app_data: SharedAppData,
+    ping_notification: SharedPingNotifications,
     body_data: Json<SAlphaPingRequest>,
     base_request: HttpRequest,
 ) -> anyhow::Result<HttpResponse, api_errors::ApiErrors> {
@@ -172,7 +171,63 @@ pub async fn salpha_ping(
             ))
         })?;
 
+    let device_name = &iot_device_activity.device_name;
+    let device_location = &iot_device_activity.device_location;
+    let last_activity_time = &iot_device_activity.last_activity_time;
+
     let res = SAlphaPingResponse::new(iot_device_activity, device_type, iot_settings);
+
+    // todo improve the notification logic, move this outside ping to a spawn of polling
+    // if [is_first_ping_after_device_turned_on] is received as true from the incoming api request
+    // send the user has joined notification alert
+    if iot_device_activity.is_first_ping_after_device_turned_on {
+        let ping_res = ping_notification
+            .send_a_device_joined_alert(device_name, device_location, last_activity_time)
+            .await;
+        if let Err(e) = ping_res {
+            error!("[E0001a] A notification error occured {:?}", e);
+        }
+    }
+
+    // if [is_continuous_period_buzzer_beep_active] is true then check if we can
+    // send the `switch off` notification alert
+    if res.is_continuous_period_buzzer_beep_active {
+        // if the [is_continuous_period_buzzer_notification_completed] is false
+        if !iot_device_activity
+            .is_continuous_period_buzzer_notification_completed
+            .get()
+        {
+            // then send the `switch off` notification alert
+            let ping_res = ping_notification
+                .send_turn_device_off_alert(device_name, device_location, last_activity_time)
+                .await;
+            if let Err(e) = ping_res {
+                error!("[E0001b] A notification error occured {:?}", e);
+            }
+
+            // mark [is_continuous_period_buzzer_notification_completed] as true
+            // so that we don't send any more notifications to the user for this session
+            iot_device_activity
+                .is_continuous_period_buzzer_notification_completed
+                .set(true);
+        }
+    } else {
+        // if [is_continuous_period_buzzer_beep_active] is false then check if we can
+        // mark [is_continuous_period_buzzer_notification_completed] as false
+        #[allow(clippy::collapsible_else_if)]
+        if iot_device_activity
+            .is_continuous_period_buzzer_notification_completed
+            .get()
+        {
+            // since a new session has started for the device
+            // mark [is_continuous_period_buzzer_notification_completed] as false so that
+            // we could send the `switch off` notification alert the next time
+            // [is_continuous_period_buzzer_notification_completed] is true
+            iot_device_activity
+                .is_continuous_period_buzzer_notification_completed
+                .set(false);
+        }
+    }
 
     Ok(success_resp(res))
 }

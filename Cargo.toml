@@ -36,11 +36,15 @@ fern = { version = "0.6.0", features = ["colored"] }
 log = "0.4.14"
 anyhow = "1.0.51"
 thiserror = "1.0.30"
+lazy_static = "1.4.0"
 
 chrono = "0.4.19"
 chrono-tz = { version = "0.6.0", git = "https://github.com/ganeshrvel/chrono-tz", branch = "utc+0530" }
 
 tokio = { version = "1.14.0", features = ["full"] }
+
+teloxide = { version = "0.9.0" }
+teloxide-core = { version = "0.6.0" }
 
 [dev-dependencies]
 rusty-hook = "^0.11.2"

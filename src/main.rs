@@ -23,10 +23,12 @@ mod api;
 mod common;
 mod constants;
 mod helpers;
+mod services;
 mod utils;
 
 use std::env;
 
+use crate::api::route_handlers::api_v1::sirius_alpha::notifications::PingNotifications;
 use actix_web::{middleware as actix_middleware, middleware, web, App, HttpServer};
 use api::helpers::responses::not_found;
 
@@ -89,7 +91,11 @@ async fn run() -> anyhow::Result<()> {
 
     // app data
     let app_data = AppData::new().await?;
-    let shared_app_data = actix_web::web::Data::new(app_data);
+    let shared_app_data = web::Data::new(app_data);
+
+    let ping_notification =
+        PingNotifications::new(&shared_app_data.config.app_settings.settings.telegram);
+    let shared_ping_notification = web::Data::new(ping_notification);
 
     let server = shared_app_data.config.app_settings.settings.server.clone();
     let server_url_with_protocol = server.get_uri(true)?;
@@ -126,6 +132,7 @@ async fn run() -> anyhow::Result<()> {
             ))
             .service(api::api_scope(&server))
             .app_data(shared_app_data.clone())
+            .app_data(shared_ping_notification.clone())
             .app_data(get_json_err())
             .app_data(shared_state.clone())
             .default_service(web::to(not_found))

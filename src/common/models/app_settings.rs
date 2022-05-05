@@ -9,6 +9,7 @@ pub struct AppSettings {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct SettingsEntity {
     pub server: Server,
+    pub telegram: TelegramEntity,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -30,6 +31,12 @@ pub struct Server {
     pub enable_tls: bool,
 
     pub tls: Option<ServerTls>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct TelegramEntity {
+    pub token: String,
+    pub chat_id: i64,
 }
 
 impl Server {
@@ -69,10 +76,9 @@ impl Server {
     }
 }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ServerTls {
     pub tls_key_file: String,
 
-    pub tls_cert_file: String
+    pub tls_cert_file: String,
 }

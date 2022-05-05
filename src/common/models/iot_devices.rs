@@ -37,4 +37,5 @@ pub struct SAlphaDeviceDetails {
     pub device_location: String,
     pub revision: u8,
     pub app_version: String,
+    pub is_first_ping_after_device_turned_on: bool,
 }

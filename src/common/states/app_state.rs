@@ -1,5 +1,5 @@
 use crate::common::models::data::SharedAppData;
-use crate::common::models::iot_devices::{IotDevice, IotDeviceType};
+use crate::common::models::iot_devices::{IotDevice, IotDeviceType, SAlphaDeviceDetails};
 use crate::common::models::iot_settings::{IotSettings, SAlphaIotPresets};
 use crate::constants::default_values::DefaultValues;
 use crate::helpers::date::get_time_now_for_default_tz;
@@ -7,14 +7,13 @@ use crate::push_to_last_and_maintain_capacity_of_vector;
 use crate::utils::math::max_of;
 use actix_web::web;
 use chrono::{DateTime, Duration};
-use log::error;
 use std::cell::Cell;
 use std::collections::HashMap;
 use std::num::Wrapping;
 use std::ops::Add;
 use std::sync::Mutex;
 
-pub type IotDevicesActivityBucket = HashMap<String, IotDevicesActivityContainer>;
+pub type IotDevicesActivityBucket = HashMap<String, IotDeviceActivityContainer>;
 pub type SharedAppState = web::Data<Mutex<AppState>>;
 
 #[derive(Debug)]
@@ -57,7 +56,7 @@ impl IotDevicesState {
         match existing_activity_bucket {
             None => {
                 let next_iot_device_activity_container =
-                    IotDevicesActivityContainer::new(device_id, device_type, iot_device);
+                    IotDeviceActivityContainer::new(device_id, device_type, iot_device);
 
                 self.devices_activity_bucket
                     .entry(device_id.to_owned())
@@ -80,21 +79,26 @@ impl IotDevicesState {
 }
 
 #[derive(Debug, Clone)]
-pub struct IotDevicesActivityContainer {
+pub struct IotDeviceActivityContainer {
     pub data_storage: Vec<IotDeviceActivityDataUnit>,
     pub device_type: IotDeviceType,
     pub device_id: String,
+    pub device_location: String,
+    pub device_name: String,
     pub last_activity_time: DateTime<chrono_tz::Tz>,
     pub last_activity_tz: chrono_tz::Tz,
     pub total_running_time: Duration,
+    pub is_first_ping_after_device_turned_on: bool,
+    pub is_continuous_period_buzzer_notification_completed: Cell<bool>,
     pub device_states: IotDeviceAppState,
 }
 
-struct IotDevicesActivityTime {
+struct IotDeviceActivity {
     pub total_running_time: Duration,
+    pub is_first_ping_after_device_turned_on: bool,
 }
 
-impl IotDevicesActivityContainer {
+impl IotDeviceActivityContainer {
     pub fn new(device_id: &str, device_type: IotDeviceType, device_data: &IotDevice) -> Self {
         let next_device_activity_data_unit =
             IotDeviceActivityDataUnit::new(device_id, device_type, device_data);
@@ -102,14 +106,29 @@ impl IotDevicesActivityContainer {
         let last_activity_time = next_device_activity_data_unit.time;
         let last_activity_tz = next_device_activity_data_unit.tz;
 
+        let SAlphaDeviceDetails {
+            is_first_ping_after_device_turned_on,
+            device_location,
+            device_name,
+            ..
+        } = match device_data {
+            IotDevice::RoofWaterHeater(d)
+            | IotDevice::BoreWellMotor(d)
+            | IotDevice::GroundWellMotor(d) => d,
+        };
+
         Self {
             data_storage: vec![next_device_activity_data_unit],
             device_type,
             device_id: device_id.to_owned(),
+            device_location: device_location.clone(),
+            device_name: device_name.clone(),
             last_activity_time,
             last_activity_tz,
-            total_running_time: chrono::Duration::zero(),
+            total_running_time: Duration::zero(),
             device_states: IotDeviceAppState::default(device_type),
+            is_first_ping_after_device_turned_on: *is_first_ping_after_device_turned_on,
+            is_continuous_period_buzzer_notification_completed: Cell::new(false),
         }
     }
 
@@ -120,6 +139,13 @@ impl IotDevicesActivityContainer {
         device_data: &IotDevice,
         iot_settings: &IotSettings,
     ) -> Self {
+        let is_continuous_period_buzzer_notification_completed = self
+            .is_continuous_period_buzzer_notification_completed
+            .clone();
+
+        let device_name = self.device_name.clone();
+        let device_location = self.device_location.clone();
+
         let mut current_iot_device_activity_container_data_storage = self.data_storage.clone();
         let next_device_activity_data_unit =
             IotDeviceActivityDataUnit::new(device_id, device_type, device_data);
@@ -159,10 +185,13 @@ impl IotDevicesActivityContainer {
         let last_activity_time = next_device_activity_data_unit_clone.time;
 
         let device_states = self.device_states.clone();
-        let IotDevicesActivityTime { total_running_time } = self.fetch_activity_time(
+        let IotDeviceActivity {
+            total_running_time,
+            is_first_ping_after_device_turned_on,
+        } = self.fetch_activity_time(
             &next_device_activity_data_unit_clone,
-            device_type,
             iot_settings,
+            device_data,
         );
 
         Self {
@@ -172,28 +201,35 @@ impl IotDevicesActivityContainer {
             device_type,
             last_activity_tz,
             device_id: device_id.to_owned(),
+            device_location,
             device_states,
+            is_first_ping_after_device_turned_on,
+            is_continuous_period_buzzer_notification_completed,
+            device_name,
         }
     }
 
     fn fetch_activity_time(
         self,
         next_device_activity_data_unit: &IotDeviceActivityDataUnit,
-        device_type: IotDeviceType,
         iot_settings: &IotSettings,
-    ) -> IotDevicesActivityTime {
-        match device_type {
-            IotDeviceType::RoofWaterHeater => self.fetch_total_activity_time_salpha(
+        device_data: &IotDevice,
+    ) -> IotDeviceActivity {
+        match device_data {
+            IotDevice::RoofWaterHeater(d) => self.fetch_total_activity_time_salpha(
                 next_device_activity_data_unit,
                 &iot_settings.settings.presets.roof_water_heater,
+                d,
             ),
-            IotDeviceType::BoreWellMotor => self.fetch_total_activity_time_salpha(
+            IotDevice::BoreWellMotor(d) => self.fetch_total_activity_time_salpha(
                 next_device_activity_data_unit,
                 &iot_settings.settings.presets.bore_well_motor,
+                d,
             ),
-            IotDeviceType::GroundWellMotor => self.fetch_total_activity_time_salpha(
+            IotDevice::GroundWellMotor(d) => self.fetch_total_activity_time_salpha(
                 next_device_activity_data_unit,
                 &iot_settings.settings.presets.ground_well_motor,
+                d,
             ),
         }
     }
@@ -202,7 +238,8 @@ impl IotDevicesActivityContainer {
         self,
         next_device_activity_data_unit: &IotDeviceActivityDataUnit,
         salpha_presets: &SAlphaIotPresets,
-    ) -> IotDevicesActivityTime {
+        d: &SAlphaDeviceDetails,
+    ) -> IotDeviceActivity {
         let next_device_activity_time = next_device_activity_data_unit.time;
 
         let total_running_time: Duration = (|| {
@@ -219,9 +256,10 @@ impl IotDevicesActivityContainer {
             // (  [last_activity_time] | <---[pause_total_running_time_on_inactive_for_ms]---> | <---[silent_activity_time_to_skip]---> | [next_device_activity_time] )
             // (  <--- [last_activity_permitted_before_pausing]   -------------> | )
             if time_diff_ms >= salpha_presets.pause_total_running_time_on_inactive_for_ms {
-                let last_activity_permitted_before_pausing = self.last_activity_time.add(
-                    Duration::milliseconds(salpha_presets.pause_total_running_time_on_inactive_for_ms),
-                );
+                let last_activity_permitted_before_pausing =
+                    self.last_activity_time.add(Duration::milliseconds(
+                        salpha_presets.pause_total_running_time_on_inactive_for_ms,
+                    ));
 
                 let silent_activity_time_to_skip =
                     next_device_activity_time - last_activity_permitted_before_pausing;
@@ -233,7 +271,10 @@ impl IotDevicesActivityContainer {
             self.total_running_time + time_diff
         })();
 
-        IotDevicesActivityTime { total_running_time }
+        IotDeviceActivity {
+            total_running_time,
+            is_first_ping_after_device_turned_on: d.is_first_ping_after_device_turned_on,
+        }
     }
 }
 

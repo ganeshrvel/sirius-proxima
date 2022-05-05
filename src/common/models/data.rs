@@ -1,6 +1,6 @@
 use crate::helpers::parsers::setting_files::AppConfig;
-use std::sync::Arc;
 use actix_web::web;
+use std::sync::Arc;
 
 pub type SharedAppData = web::Data<Arc<AppData>>;
 

@@ -42,3 +42,7 @@ settings:
 
       #### (String) Cert file
       tls_cert_file: /path/cert.pem
+      
+  telegram:
+    token: "xxxxxxxx:yyyyyyyyyyyyy"
+    chat_id: "-xxxxxxxxx"
