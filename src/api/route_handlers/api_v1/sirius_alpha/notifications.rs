@@ -41,7 +41,7 @@ impl PingNotifications {
 
         self.service
             .send_message(format!(
-                "<strong>Switch off</strong> {} in the {}.\n[{}]",
+                "<strong>SWITCH OFF</strong> the \"{}\" in the {}.\n[{}]",
                 device_name, device_location, time
             ))
             .await
