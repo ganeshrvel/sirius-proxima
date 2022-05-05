@@ -3,6 +3,7 @@ use crate::common::models::iot_devices::{IotDevice, IotDeviceType, SAlphaDeviceD
 use crate::common::models::iot_settings::{IotSettings, SAlphaIotPresets};
 use crate::constants::default_values::DefaultValues;
 use crate::helpers::date::get_time_now_for_default_tz;
+use crate::helpers::system_time_x::SystemTimeX;
 use crate::push_to_last_and_maintain_capacity_of_vector;
 use crate::utils::math::max_of;
 use actix_web::web;
@@ -89,7 +90,7 @@ pub struct IotDeviceActivityContainer {
     pub last_activity_tz: chrono_tz::Tz,
     pub total_running_time: Duration,
     pub is_first_ping_after_device_turned_on: bool,
-    pub is_continuous_period_buzzer_notification_completed: Cell<bool>,
+    pub next_continuous_period_buzzer_notification_time: Cell<SystemTimeX>,
     pub device_states: IotDeviceAppState,
 }
 
@@ -128,7 +129,7 @@ impl IotDeviceActivityContainer {
             total_running_time: Duration::zero(),
             device_states: IotDeviceAppState::default(device_type),
             is_first_ping_after_device_turned_on: *is_first_ping_after_device_turned_on,
-            is_continuous_period_buzzer_notification_completed: Cell::new(false),
+            next_continuous_period_buzzer_notification_time: Cell::new(SystemTimeX::now()),
         }
     }
 
@@ -139,8 +140,8 @@ impl IotDeviceActivityContainer {
         device_data: &IotDevice,
         iot_settings: &IotSettings,
     ) -> Self {
-        let is_continuous_period_buzzer_notification_completed = self
-            .is_continuous_period_buzzer_notification_completed
+        let next_continuous_period_buzzer_notification_time = self
+            .next_continuous_period_buzzer_notification_time
             .clone();
 
         let device_name = self.device_name.clone();
@@ -204,7 +205,7 @@ impl IotDeviceActivityContainer {
             device_location,
             device_states,
             is_first_ping_after_device_turned_on,
-            is_continuous_period_buzzer_notification_completed,
+            next_continuous_period_buzzer_notification_time,
             device_name,
         }
     }

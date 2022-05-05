@@ -14,6 +14,8 @@ use crate::common::states::app_state::{
     IotDeviceActivityContainer, IotDeviceAppState, SAlphaAppState, SharedAppState,
 };
 use crate::constants::header_keys;
+use crate::helpers::system_time_x::Diff;
+use crate::DefaultValues;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct SAlphaPingRequest {
@@ -192,40 +194,35 @@ pub async fn salpha_ping(
     // if [is_continuous_period_buzzer_beep_active] is true then check if we can
     // send the `switch off` notification alert
     if res.is_continuous_period_buzzer_beep_active {
-        // if the [is_continuous_period_buzzer_notification_completed] is false
-        if !iot_device_activity
-            .is_continuous_period_buzzer_notification_completed
+        // if the [next_continuous_period_buzzer_notification_time] has passed then try to
+        // send the `switch off` notification alert
+        if let Diff::HasPassed(_) = iot_device_activity
+            .next_continuous_period_buzzer_notification_time
             .get()
+            .since()
         {
-            // then send the `switch off` notification alert
             let ping_res = ping_notification
                 .send_turn_device_off_alert(device_name, device_location, last_activity_time)
                 .await;
             if let Err(e) = ping_res {
+                // display the error if any
                 error!("[E0001b] A notification error occured {:?}", e);
-            }
+            } else {
+                // successful telegram notification
+                // mark [next_continuous_period_buzzer_notification_time] as 'X' ms from now
+                // so that we don't keep firing continuous notifications to the user.
+                // we will wait for 'X' ms to pass to fire the next notification
+                let next = iot_device_activity
+                    .next_continuous_period_buzzer_notification_time
+                    .get()
+                    .add_millis_to_now(
+                        DefaultValues::CONTINUOUS_PERIOD_BUZZER_NOTIFICATION_INTERVAL,
+                    );
 
-            // mark [is_continuous_period_buzzer_notification_completed] as true
-            // so that we don't send any more notifications to the user for this session
-            iot_device_activity
-                .is_continuous_period_buzzer_notification_completed
-                .set(true);
-        }
-    } else {
-        // if [is_continuous_period_buzzer_beep_active] is false then check if we can
-        // mark [is_continuous_period_buzzer_notification_completed] as false
-        #[allow(clippy::collapsible_else_if)]
-        if iot_device_activity
-            .is_continuous_period_buzzer_notification_completed
-            .get()
-        {
-            // since a new session has started for the device
-            // mark [is_continuous_period_buzzer_notification_completed] as false so that
-            // we could send the `switch off` notification alert the next time
-            // [is_continuous_period_buzzer_notification_completed] is true
-            iot_device_activity
-                .is_continuous_period_buzzer_notification_completed
-                .set(false);
+                iot_device_activity
+                    .next_continuous_period_buzzer_notification_time
+                    .set(next);
+            }
         }
     }
 

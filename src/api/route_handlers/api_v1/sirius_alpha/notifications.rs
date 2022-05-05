@@ -1,5 +1,5 @@
 use crate::common::models::app_settings::TelegramEntity;
-use crate::helpers::date::get_formatted_date_time;
+use crate::helpers::date::get_formatted_notification_date_time;
 use crate::services::notification::NotificationServices;
 use actix_web::web;
 use chrono::DateTime;
@@ -22,7 +22,7 @@ impl PingNotifications {
         device_location: &str,
         activity_time: &DateTime<Tz>,
     ) -> ResponseResult<Message> {
-        let time = get_formatted_date_time(activity_time);
+        let time = get_formatted_notification_date_time(activity_time);
 
         self.service
             .send_message(format!(
@@ -37,7 +37,7 @@ impl PingNotifications {
         device_location: &str,
         activity_time: &DateTime<Tz>,
     ) -> ResponseResult<Message> {
-        let time = get_formatted_date_time(activity_time);
+        let time = get_formatted_notification_date_time(activity_time);
 
         self.service
             .send_message(format!(

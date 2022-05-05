@@ -15,4 +15,5 @@ impl DefaultValues<'static> {
 
     pub const MAX_ACTIVITIES_VECTOR_LENGTH_PER_DEVICE: usize = 1000;
     pub const MAX_ACTIVITIES_PER_DEVICE_CLEAR_SPLICE_SIZE: usize = 50;
+    pub const CONTINUOUS_PERIOD_BUZZER_NOTIFICATION_INTERVAL: u64 = 10_000;
 }

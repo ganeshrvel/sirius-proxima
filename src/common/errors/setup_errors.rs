@@ -21,4 +21,7 @@ pub enum SetupError<'a> {
 
     #[error("[2:?] An error occurred while deserializing the {0:?} file: {1:?}")]
     SettingsFileDeserialize(&'a str, serde_yaml::Error, &'a str),
+
+    #[error("[2:?] A system time error occurred {0:?}")]
+    SystemTime(&'a str, &'a str),
 }

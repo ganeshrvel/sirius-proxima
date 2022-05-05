@@ -1,7 +1,7 @@
 use crate::DefaultValues;
-use chrono::{format, DateTime, Utc};
+use chrono::{DateTime, Utc};
 use chrono_tz::Tz;
-use std::fmt::{format, Debug};
+use std::fmt::Debug;
 use std::time::Instant;
 
 pub fn _get_unix_timestamp_ms() -> i64 {
@@ -30,8 +30,12 @@ pub fn get_time_now_for_default_tz() -> DateTime<Tz> {
     utc_to_default_tz(time_now)
 }
 
-pub fn get_formatted_date_time(time: &DateTime<Tz>) -> String {
+pub fn get_formatted_notification_date_time(time: &DateTime<Tz>) -> String {
     time.format("%I:%M:%S %P, %v").to_string()
+}
+
+pub fn get_formatted_date_time(time: &DateTime<Tz>) -> String {
+    time.format("%v %I:%M:%S %P").to_string()
 }
 
 pub fn get_formatted_date_time_now() -> String {
